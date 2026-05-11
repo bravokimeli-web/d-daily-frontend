@@ -20,7 +20,8 @@ function HomePage() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative overflow-hidden min-h-screen" style={{ backgroundImage: `url(${hero})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section className="relative overflow-hidden min-h-screen">
+        <img src={hero} alt="D-Daily hero banner - pest control and home protection" className="absolute inset-0 w-full h-full object-cover" loading="eager" />
         {/* Overlay for text visibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
         
