@@ -23,10 +23,11 @@ function CartPage() {
         <div className="mt-10 grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-3">
             {items.map((i) => (
-              <div key={i.slug} className="flex gap-4 p-4 rounded-2xl border bg-card">
+              <div key={`${i.slug}-${i.variant ?? "default"}`} className="flex gap-4 p-4 rounded-2xl border bg-card">
                 <img src={i.image} alt={i.name} className="h-24 w-24 rounded-xl object-cover bg-surface"/>
                 <div className="flex-1">
                   <div className="font-semibold">{i.name}</div>
+                  {i.variant && <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{i.variant}</div>}
                   <div className="text-sm text-muted-foreground">{formatKES(i.price)}</div>
                   <div className="mt-3 flex items-center gap-2">
                     <input
@@ -35,11 +36,11 @@ function CartPage() {
                     value={i.qty}
                     onChange={(e) => {
                       const nextQty = Number(e.target.value);
-                      setQty(i.slug, Number.isFinite(nextQty) && nextQty > 0 ? nextQty : 1);
+                      setQty(i.slug, Number.isFinite(nextQty) && nextQty > 0 ? nextQty : 1, i.variant);
                     }}
                     className="w-16 h-9 px-2 rounded border text-sm"
                   />
-                    <button type="button" onClick={()=>remove(i.slug)} className="text-sm text-muted-foreground hover:text-destructive">Remove</button>
+                    <button type="button" onClick={()=>remove(i.slug, i.variant)} className="text-sm text-muted-foreground hover:text-destructive">Remove</button>
                   </div>
                 </div>
                 <div className="font-semibold">{formatKES(i.price * i.qty)}</div>

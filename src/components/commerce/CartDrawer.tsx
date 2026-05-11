@@ -31,22 +31,23 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {items.map((i) => (
-                <div key={i.slug} className="flex gap-3">
+                <div key={`${i.slug}-${i.variant ?? "default"}`} className="flex gap-3">
                   <img src={i.image} alt={i.name} className="h-20 w-20 rounded-lg object-cover bg-surface border" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm leading-snug line-clamp-2">{i.name}</div>
+                    {i.variant && <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">{i.variant}</div>}
                     <div className="text-sm text-muted-foreground mt-1">{formatKES(i.price)}</div>
                     <div className="mt-2 flex items-center gap-2">
                       <div className="flex items-center border rounded-full">
-                        <button type="button" onClick={() => setQty(i.slug, i.qty - 1)} className="p-1.5 hover:text-primary" aria-label="Decrease quantity">
+                        <button type="button" onClick={() => setQty(i.slug, i.qty - 1, i.variant)} className="p-1.5 hover:text-primary" aria-label="Decrease quantity">
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="px-2 text-sm tabular-nums">{i.qty}</span>
-                        <button type="button" onClick={() => setQty(i.slug, i.qty + 1)} className="p-1.5 hover:text-primary" aria-label="Increase quantity">
+                        <button type="button" onClick={() => setQty(i.slug, i.qty + 1, i.variant)} className="p-1.5 hover:text-primary" aria-label="Increase quantity">
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
-                      <button type="button" onClick={() => remove(i.slug)} aria-label="Remove item" className="text-muted-foreground hover:text-destructive ml-auto">
+                      <button type="button" onClick={() => remove(i.slug, i.variant)} aria-label="Remove item" className="text-muted-foreground hover:text-destructive ml-auto">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

@@ -21,6 +21,7 @@ export interface Product {
   category: Category;
   image: string;
   images?: string[];
+  variants?: { id: string; label: string; price: number; originalPrice?: number }[];
   tagline: string;
   description: string;
   usage: string[];
@@ -82,19 +83,24 @@ export const products: Product[] = [
   },
   {
     slug: "snake-repellent-powder",
-    name: "Snake Repellent Powder 500g",
+    name: "Snake Repellent Powder",
     price: 1980,
     originalPrice: 3999,
     category: "home-protection",
     image: snake,
-    tagline: "Long-lasting perimeter protection against snakes.",
+    variants: [
+      { id: "500g", label: "500g", price: 1980, originalPrice: 3999 },
+      { id: "1000g", label: "1000g", price: 3599, originalPrice: 7998 },
+      { id: "1500g", label: "1500g", price: 5299, originalPrice: 11997 },
+    ],
+    tagline: "Single product with size variants for every property.",
     description:
       "Outdoor-use granular powder that creates a stable barrier around your home compound or farm. Weather-resistant.",
     usage: ["Apply a continuous 5cm-wide line around the perimeter.", "Reapply after heavy rain."],
     safety: ["For outdoor use only.", "Wear gloves when applying."],
     specs: [
-      { label: "Net weight", value: "500 g" },
       { label: "Use", value: "Outdoor / Perimeter" },
+      { label: "Coverage", value: "Varies by size" },
     ],
   },
   {
@@ -134,18 +140,17 @@ export const products: Product[] = [
   },
   {
     slug: "automatic-fly-catcher",
-    name: "Automatic Fly Catcher (4 Units)",
+    name: "Automatic Fly Catcher",
     price: 169,
     originalPrice: 200,
     category: "pest-control",
     image: fly,
     tagline: "No baiting, no poisons, no mess — just results.",
     description:
-      "Pack of 4 sticky fly catcher rolls with super lure. Ideal for kitchens, shops, and farms.",
+      "Sticky fly catcher roll with super lure. Ideal for kitchens, shops, and farms.",
     usage: ["Twist open and hang in fly-prone areas.", "Replace when fully covered."],
     safety: ["Keep away from hair and pets."],
     specs: [
-      { label: "Pack", value: "4 units" },
       { label: "Type", value: "Sticky lure roll" },
     ],
   },
@@ -192,40 +197,6 @@ export const products: Product[] = [
     usage: ["Wear on wrist or ankle.", "Store in sealed pouch when not in use."],
     safety: ["Skin-safe; remove if irritation occurs."],
     specs: [{ label: "Duration", value: "Up to 240 h" }],
-  },
-  {
-    slug: "snake-repellent-1000g",
-    name: "Snake Repellent Powder 1000g",
-    price: 3599,
-    originalPrice: 7998,
-    category: "home-protection",
-    image: snake,
-    tagline: "Extended perimeter protection for larger compounds.",
-    description:
-      "Outdoor-use granular powder that creates a stable barrier around your home compound or farm. Weather-resistant. Larger 1000g pack for bigger areas.",
-    usage: ["Apply a continuous 5cm-wide line around the perimeter.", "Reapply after heavy rain."],
-    safety: ["For outdoor use only.", "Wear gloves when applying."],
-    specs: [
-      { label: "Net weight", value: "1000 g" },
-      { label: "Use", value: "Outdoor / Perimeter" },
-    ],
-  },
-  {
-    slug: "snake-repellent-1500g",
-    name: "Snake Repellent Powder 1500g",
-    price: 5299,
-    originalPrice: 11997,
-    category: "home-protection",
-    image: snake,
-    tagline: "Maximum coverage for farms and large properties.",
-    description:
-      "Outdoor-use granular powder that creates a stable barrier around your home compound or farm. Weather-resistant. Largest 1500g pack for extensive coverage.",
-    usage: ["Apply a continuous 5cm-wide line around the perimeter.", "Reapply after heavy rain."],
-    safety: ["For outdoor use only.", "Wear gloves when applying."],
-    specs: [
-      { label: "Net weight", value: "1500 g" },
-      { label: "Use", value: "Outdoor / Perimeter" },
-    ],
   },
   {
     slug: "4-in-1-home-pest-control-kit",

@@ -26,17 +26,34 @@ function ProductPage() {
   const { product } = Route.useLoaderData();
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const defaultVariant = product.variants?.[0];
+  const [selectedVariantId, setSelectedVariantId] = useState(defaultVariant?.id ?? "");
+  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId) ?? defaultVariant;
   const add = useCart((s) => s.add);
-  const cartItem = useCart((s) => s.items.find((item) => item.slug === product.slug));
+  const cartItem = useCart((s) =>
+    s.items.find((item) => item.slug === product.slug && item.variant === selectedVariant?.label)
+  );
   const related = products.filter((p) => p.category === product.category && p.slug !== product.slug && p.price).slice(0, 4);
   const currentCartQty = cartItem?.qty ?? 0;
-  const totalPrice = product.price ? product.price * qty : 0;
+  const totalPrice = (selectedVariant?.price ?? product.price ?? 0) * qty;
 
   const allImages = product.images && product.images.length > 0 ? product.images : [product.image];
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const displayOriginalPrice = selectedVariant?.originalPrice ?? product.originalPrice;
+  const selectedVariantLabel = selectedVariant?.label;
 
   const handleAdd = () => {
-    if (!product.price) return;
-    add({ slug: product.slug, name: product.name, price: product.price, image: product.image }, qty);
+    if (!displayPrice) return;
+    add(
+      {
+        slug: product.slug,
+        variant: selectedVariantLabel,
+        name: selectedVariantLabel ? `${product.name} (${selectedVariantLabel})` : product.name,
+        price: displayPrice,
+        image: product.image,
+      },
+      qty
+    );
     toast.success(`${product.name} added to cart!`, {
       description: "Ready to checkout or keep shopping?",
       action: {
@@ -86,13 +103,31 @@ function ProductPage() {
           )}
           <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
           <p className="mt-3 text-muted-foreground text-lg">{product.tagline}</p>
+          {product.variants && product.variants.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {product.variants.map((variant) => (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => setSelectedVariantId(variant.id)}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${
+                    selectedVariantId === variant.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-foreground hover:border-primary/70"
+                  }`}
+                >
+                  {variant.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mt-6 font-display text-3xl font-bold">
-            {product.price ? (
+            {displayPrice ? (
               <div className="flex items-center gap-3">
-                {formatKES(product.price)}
-                {product.originalPrice && (
+                {formatKES(displayPrice)}
+                {displayOriginalPrice && (
                   <span className="text-lg text-muted-foreground line-through">
-                    {formatKES(product.originalPrice)}
+                    {formatKES(displayOriginalPrice)}
                   </span>
                 )}
               </div>

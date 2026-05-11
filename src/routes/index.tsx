@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
 const catIcons = { "pest-control": Bug, lighting: Lightbulb, "home-protection": Home, "farm-protection": Leaf } as const;
 
 function HomePage() {
-  const featured = products.filter((p) => p.price).slice(0, 8);
+  const featured = products.filter((p) => p.price).slice(-8).reverse();
   const { isAdmin } = useAdminAccess();
 
   return (
