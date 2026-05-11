@@ -21,6 +21,23 @@ const RESELLER_DOC_LABELS: Record<string, string> = {
   additional: "Additional",
 };
 
+function linesToArray(raw: FormDataEntryValue | null | undefined): string[] {
+  if (raw == null || typeof raw !== "string") return [];
+  return raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
+
+function parseSpecLines(raw: FormDataEntryValue | null | undefined): { label: string; value: string }[] {
+  const out: { label: string; value: string }[] = [];
+  for (const line of linesToArray(raw)) {
+    const pipe = line.indexOf("|");
+    if (pipe === -1) continue;
+    const label = line.slice(0, pipe).trim();
+    const value = line.slice(pipe + 1).trim();
+    if (label && value) out.push({ label, value });
+  }
+  return out;
+}
+
 export const Route = createFileRoute("/admin")({
   component: () => {
     const isAdmin = hasAdminAccess();
@@ -188,9 +205,14 @@ export const Route = createFileRoute("/admin")({
       const name = (formData.get("name") as string)?.trim();
       const imageUrlField = (formData.get("imageUrl") as string)?.trim();
       const description = (formData.get("description") as string)?.trim() || name;
+      const taglineField = (formData.get("tagline") as string)?.trim();
+      const usage = linesToArray(formData.get("usage"));
+      const safety = linesToArray(formData.get("safety"));
+      const specs = parseSpecLines(formData.get("specs"));
       const priceRaw = formData.get("price") as string;
       const category = formData.get("category") as string;
       const stockRaw = (formData.get("stock") as string) || "0";
+      const tagline = taglineField || description.slice(0, 120);
 
       if (!name || !category) {
         toast.error("Name and category are required");
@@ -245,11 +267,11 @@ export const Route = createFileRoute("/admin")({
             price: parseFloat(priceRaw),
             category,
             image: imageForProduct,
-            tagline: description.slice(0, 120),
+            tagline,
             description,
-            usage: [],
-            safety: [],
-            specs: [],
+            usage,
+            safety,
+            specs,
             stock: Math.max(0, parseInt(stockRaw, 10) || 0),
           }),
         });
@@ -504,10 +526,55 @@ export const Route = createFileRoute("/admin")({
                     <label className="text-sm font-medium">Description</label>
                     <textarea
                       name="description"
-                      placeholder="Product description and details"
-                      rows={3}
+                      placeholder="Full product description for the detail page"
+                      rows={4}
                       className="mt-2 w-full px-3 py-2 rounded-lg border border-input bg-background"
                       required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Tagline (short line for shop cards)</label>
+                    <input
+                      name="tagline"
+                      type="text"
+                      placeholder="Optional — defaults to the first part of the description"
+                      className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">How to use</label>
+                    <p className="text-xs text-muted-foreground mt-0.5 mb-1">One step per line (bullet list on the site).</p>
+                    <textarea
+                      name="usage"
+                      placeholder={"e.g.\nShake well before use.\nSpray 20–30cm from surfaces."}
+                      rows={4}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background font-mono text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Safety precautions</label>
+                    <p className="text-xs text-muted-foreground mt-0.5 mb-1">One precaution per line.</p>
+                    <textarea
+                      name="safety"
+                      placeholder={"e.g.\nKeep out of reach of children.\nVentilate after use."}
+                      rows={4}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background font-mono text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Specifications</label>
+                    <p className="text-xs text-muted-foreground mt-0.5 mb-1">
+                      One per line: <span className="font-mono">Label | Value</span> (use the vertical bar).
+                    </p>
+                    <textarea
+                      name="specs"
+                      placeholder={"e.g.\nVolume | 500 ml\nFormat | Trigger spray"}
+                      rows={4}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-input bg-background font-mono text-sm"
                     />
                   </div>
 

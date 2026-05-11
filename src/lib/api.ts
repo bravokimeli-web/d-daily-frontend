@@ -32,22 +32,21 @@ export function getApiBaseUrl(): string {
   return normalizeHttpBase(rawInput);
 }
 
-/** Origin for static files (`/uploads/...`) — strips `/api` from the API base. */
-export function getAssetBaseUrl(): string {
-  const api = getApiBaseUrl();
-  if (/^https?:\/\//i.test(api)) {
-    return api.replace(/\/api\/?$/, "");
-  }
-  if (typeof window !== "undefined") return window.location.origin;
-  return "http://localhost:5000";
-}
-
-/** Turn stored paths like `/uploads/...` into a browser-openable absolute URL. */
+/**
+ * Image URL for `<img src>`.
+ * - Absolute `http(s)://` and `data:` / `blob:` pass through.
+ * - `/uploads/...` is served by the API host (not the static frontend).
+ * - Other paths (`/assets/...` from Vite, bundled imports, `/public`) stay same-origin on the storefront.
+ */
 export function resolveMediaUrl(pathOrUrl: string): string {
   if (!pathOrUrl) return "";
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  const base = getAssetBaseUrl().replace(/\/+$/, "");
-  return pathOrUrl.startsWith("/") ? `${base}${pathOrUrl}` : `${base}/${pathOrUrl}`;
+  if (pathOrUrl.startsWith("data:") || pathOrUrl.startsWith("blob:")) return pathOrUrl;
+  if (pathOrUrl.startsWith("/uploads/")) {
+    const base = getApiBaseUrl().replace(/\/api\/?$/, "").replace(/\/+$/, "");
+    return `${base}${pathOrUrl}`;
+  }
+  return pathOrUrl;
 }
 
 const BASE_URL = getApiBaseUrl();
