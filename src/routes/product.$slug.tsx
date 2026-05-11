@@ -25,11 +25,14 @@ export const Route = createFileRoute("/product/$slug")({
 function ProductPage() {
   const { product } = Route.useLoaderData();
   const [qty, setQty] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(0);
   const add = useCart((s) => s.add);
   const cartItem = useCart((s) => s.items.find((item) => item.slug === product.slug));
   const related = products.filter((p) => p.category === product.category && p.slug !== product.slug && p.price).slice(0, 4);
   const currentCartQty = cartItem?.qty ?? 0;
   const totalPrice = product.price ? product.price * qty : 0;
+
+  const allImages = product.images && product.images.length > 0 ? product.images : [product.image];
 
   const handleAdd = () => {
     if (!product.price) return;
@@ -56,8 +59,25 @@ function ProductPage() {
       </div>
 
       <div className="container-px mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 lg:gap-16">
-        <div className="aspect-square rounded-3xl bg-surface overflow-hidden">
-          <img src={product.image} alt={product.name} loading="lazy" className="h-full w-full object-cover"/>
+        <div className="space-y-4">
+          <div className="aspect-square rounded-3xl bg-surface overflow-hidden">
+            <img src={allImages[selectedImage]} alt={product.name} loading="lazy" className="h-full w-full object-cover"/>
+          </div>
+          {allImages.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {allImages.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                    selectedImage === index ? 'border-primary' : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover"/>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

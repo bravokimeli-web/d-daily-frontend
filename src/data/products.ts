@@ -20,6 +20,7 @@ export interface Product {
   originalPrice?: number;
   category: Category;
   image: string;
+  images?: string[];
   tagline: string;
   description: string;
   usage: string[];
@@ -233,6 +234,7 @@ export const products: Product[] = [
     originalPrice: 6232,
     category: "pest-control",
     image: kit4in1,
+    images: [kit4in1, kitComplete, kitBeforeAfter],
     tagline: "Complete home protection — spray, powder, repellent & traps.",
     description: "Comprehensive pest control kit with insecticidal spray, powder, snake repellent, and fly catchers. Everything you need for a pest-free home.",
     usage: [
