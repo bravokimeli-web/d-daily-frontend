@@ -4,7 +4,7 @@ import { hasAdminAccess, getAdminEmail, clearAdminEmail } from "@/lib/admin";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
-import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Trash2, Eye, FileText, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Trash2, Eye, FileText, CheckCircle, XCircle, ExternalLink, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 function formatAppliedAt(value: string | Date | undefined): string {
@@ -32,6 +32,9 @@ export const Route = createFileRoute("/admin")({
     const [resellers, setResellers] = useState<any[]>([]);
     const [loadingResellers, setLoadingResellers] = useState(false);
     const [resellerFilter, setResellerFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [dropActive, setDropActive] = useState(false);
 
     const loadWebsiteProducts = useCallback(async () => {
       setLoadingProducts(true);
@@ -151,18 +154,73 @@ export const Route = createFileRoute("/admin")({
       window.location.href = "/";
     };
 
+    const handleImageSelected = (file: File | null) => {
+      if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+      if (!file) {
+        setImageFile(null);
+        setImagePreview(null);
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    };
+
+    const handleProductImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setDropActive(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith("image/")) handleImageSelected(file);
+      else if (file) toast.error("Please drop an image file (JPEG, PNG, WebP, or GIF).");
+    };
+
+    const handleProductImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setDropActive(true);
+    };
+
+    const handleProductImageDragLeave = () => {
+      setDropActive(false);
+    };
+
     const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = (formData.get("name") as string)?.trim();
-      const imageUrl = (formData.get("imageUrl") as string)?.trim();
+      const imageUrlField = (formData.get("imageUrl") as string)?.trim();
       const description = (formData.get("description") as string)?.trim() || name;
       const priceRaw = formData.get("price") as string;
       const category = formData.get("category") as string;
       const stockRaw = (formData.get("stock") as string) || "0";
 
-      if (!name || !imageUrl || !category) {
-        toast.error("Name, image URL, and category are required");
+      if (!name || !category) {
+        toast.error("Name and category are required");
+        return;
+      }
+
+      let imageForProduct = imageUrlField;
+      if (imageFile) {
+        try {
+          const fd = new FormData();
+          fd.append("image", imageFile);
+          const up = await fetch(`${getApiBaseUrl()}/admin/products/upload`, {
+            method: "POST",
+            headers: { "x-admin-email": adminEmail || "" },
+            body: fd,
+          });
+          const uj = await up.json().catch(() => ({}));
+          if (!up.ok) {
+            toast.error(typeof uj.message === "string" ? uj.message : "Image upload failed");
+            return;
+          }
+          imageForProduct = uj.data?.url as string;
+        } catch (err) {
+          toast.error((err as Error).message);
+          return;
+        }
+      }
+
+      if (!imageForProduct) {
+        toast.error("Add an image by dragging a file into the box, choosing a file, or paste an image URL below.");
         return;
       }
 
@@ -186,7 +244,7 @@ export const Route = createFileRoute("/admin")({
             name,
             price: parseFloat(priceRaw),
             category,
-            image: imageUrl,
+            image: imageForProduct,
             tagline: description.slice(0, 120),
             description,
             usage: [],
@@ -202,6 +260,9 @@ export const Route = createFileRoute("/admin")({
         }
         toast.success("Product created");
         (e.target as HTMLFormElement).reset();
+        if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+        setImageFile(null);
+        setImagePreview(null);
         await loadWebsiteProducts();
       } catch (err) {
         toast.error((err as Error).message);
@@ -330,7 +391,8 @@ export const Route = createFileRoute("/admin")({
               <div>
                 <h2 className="text-xl font-bold text-foreground mb-4">Add New Product</h2>
                 <p className="text-sm text-muted-foreground mb-4 max-w-2xl">
-                  New products are saved to the server. Use a public image URL (for example from your CDN or an image host).
+                  Drag and drop a product image or choose a file (JPEG, PNG, WebP, or GIF, up to 8MB). The image is uploaded
+                  to the server first, then the product is created. Optionally you can paste an image URL instead of uploading.
                 </p>
                 <form onSubmit={handleAddProduct} className="rounded-lg border border-border bg-card p-6 space-y-4 max-w-2xl">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -384,14 +446,57 @@ export const Route = createFileRoute("/admin")({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Image URL</label>
+                    <label className="text-sm font-medium">Product image</label>
+                    <div
+                      className={`mt-2 rounded-2xl border-2 border-dashed p-5 text-center transition-colors ${
+                        dropActive ? "border-primary bg-primary/5" : "border-input bg-background"
+                      }`}
+                      onDragOver={handleProductImageDragOver}
+                      onDragLeave={handleProductImageDragLeave}
+                      onDrop={handleProductImageDrop}
+                    >
+                      <input
+                        id="admin-product-image"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(ev) => handleImageSelected(ev.target.files?.[0] ?? null)}
+                      />
+                      <label htmlFor="admin-product-image" className="cursor-pointer block">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="mx-auto max-h-48 w-auto rounded-xl object-contain border border-border"
+                          />
+                        ) : (
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <Upload className="h-8 w-8 mx-auto text-primary" />
+                            <p className="font-semibold text-foreground">Drag and drop an image here</p>
+                            <p>or click to choose a file</p>
+                          </div>
+                        )}
+                      </label>
+                      {imagePreview && (
+                        <button
+                          type="button"
+                          className="mt-3 text-xs font-medium text-destructive hover:underline"
+                          onClick={() => handleImageSelected(null)}
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Or image URL (optional if you uploaded above)</label>
                     <input
                       name="imageUrl"
                       type="text"
                       inputMode="url"
                       placeholder="https://… or /uploads/…"
                       className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
-                      required
                     />
                   </div>
 
@@ -407,8 +512,8 @@ export const Route = createFileRoute("/admin")({
                   </div>
 
                   <Button type="submit" className="w-full">
-                    <Package className="h-4 w-4 mr-2" />
-                    Add Product
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload image and add product
                   </Button>
                 </form>
               </div>
