@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { ArrowRight, ShieldCheck, Truck, Smartphone, Sparkles, Star, Leaf, Bug, Lightbulb, Home, Settings } from "lucide-react";
 import hero from "@/assets/hero-section.png";
-import { products, categories } from "@/data/products";
+import { categories } from "@/data/products";
+import type { Product } from "@/data/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useAdminAccess } from "@/hooks/use-admin";
+import { fetchActiveStorefrontProducts } from "@/lib/storefrontCatalog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -14,8 +17,25 @@ export const Route = createFileRoute("/")({
 const catIcons = { "pest-control": Bug, lighting: Lightbulb, "home-protection": Home, "farm-protection": Leaf } as const;
 
 function HomePage() {
-  const featured = products.filter((p) => p.price).slice(-8).reverse();
   const { isAdmin } = useAdminAccess();
+  const [catalog, setCatalog] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let c = false;
+    (async () => {
+      try {
+        const list = await fetchActiveStorefrontProducts();
+        if (!c) setCatalog(list);
+      } catch {
+        if (!c) setCatalog([]);
+      }
+    })();
+    return () => {
+      c = true;
+    };
+  }, []);
+
+  const featured = catalog.filter((p) => p.price != null && p.price > 0).slice(0, 8);
 
   return (
     <div>
@@ -66,7 +86,13 @@ function HomePage() {
           <Link to="/shop" className="text-sm font-semibold text-primary hover:underline hidden md:inline">View all →</Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {featured.map((p, i) => <ProductCard product={p} key={p.slug} index={i}/>)}
+          {featured.length === 0 ? (
+            <p className="col-span-full text-center text-muted-foreground py-8">
+              No products in the catalog yet. Add active products in the admin dashboard to show them here.
+            </p>
+          ) : (
+            featured.map((p, i) => <ProductCard product={p} key={p.slug} index={i} />)
+          )}
         </div>
       </section>
 

@@ -1,29 +1,46 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, products, formatKES } from "@/data/products";
+import { formatKES } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/store/carts";
 import { Truck, ShieldCheck, Smartphone, Minus, Plus, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { toast } from "sonner";
+import { getApiBaseUrl, resolveMediaUrl } from "@/lib/api";
+import { mapApiProductToStorefront, type ApiProductRow } from "@/lib/storefrontCatalog";
 
 export const Route = createFileRoute("/product/$slug")({
-  loader: ({ params }) => {
-    const product = getProduct(params.slug);
-    if (!product) throw notFound();
-    return { product };
+  loader: async ({ params }) => {
+    const base = getApiBaseUrl();
+    const slugEnc = encodeURIComponent(params.slug);
+    const res = await fetch(`${base}/products/${slugEnc}`);
+    if (!res.ok) throw notFound();
+    const json = (await res.json()) as { success?: boolean; data?: ApiProductRow };
+    if (!json.success || !json.data) throw notFound();
+    const product = mapApiProductToStorefront(json.data);
+
+    const allRes = await fetch(`${base}/products?active=true`);
+    const allJson = (await allRes.json()) as { data?: ApiProductRow[] };
+    const related = (allJson.data ?? [])
+      .filter((p) => p.slug !== product.slug && p.category === product.category && p.price)
+      .slice(0, 4)
+      .map(mapApiProductToStorefront);
+
+    return { product, related };
   },
   component: ProductPage,
   notFoundComponent: () => (
     <div className="container-px mx-auto max-w-7xl py-24 text-center">
       <h1 className="font-display text-3xl font-bold">Product not found</h1>
-      <Button asChild className="mt-6"><Link to="/shop">Back to shop</Link></Button>
+      <Button asChild className="mt-6">
+        <Link to="/shop">Back to shop</Link>
+      </Button>
     </div>
   ),
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
+  const { product, related } = Route.useLoaderData();
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const defaultVariant = product.variants?.[0];
@@ -33,11 +50,13 @@ function ProductPage() {
   const cartItem = useCart((s) =>
     s.items.find((item) => item.slug === product.slug && item.variant === selectedVariant?.label)
   );
-  const related = products.filter((p) => p.category === product.category && p.slug !== product.slug && p.price).slice(0, 4);
   const currentCartQty = cartItem?.qty ?? 0;
   const totalPrice = (selectedVariant?.price ?? product.price ?? 0) * qty;
 
-  const allImages = product.images && product.images.length > 0 ? product.images : [product.image];
+  const primaryImage = resolveMediaUrl(String(product.image));
+  const allImagesRaw = product.images && product.images.length > 0 ? product.images : [product.image];
+  const allImages = allImagesRaw.map((img) => resolveMediaUrl(String(img)));
+
   const displayPrice = selectedVariant?.price ?? product.price;
   const displayOriginalPrice = selectedVariant?.originalPrice ?? product.originalPrice;
   const selectedVariantLabel = selectedVariant?.label;
@@ -50,7 +69,7 @@ function ProductPage() {
         variant: selectedVariantLabel,
         name: selectedVariantLabel ? `${product.name} (${selectedVariantLabel})` : product.name,
         price: displayPrice,
-        image: product.image,
+        image: allImages[selectedImage] ?? primaryImage,
       },
       qty
     );
@@ -68,29 +87,34 @@ function ProductPage() {
   return (
     <div className="pb-32 md:pb-12">
       <div className="container-px mx-auto max-w-7xl py-6 text-sm text-muted-foreground flex items-center gap-1.5">
-        <Link to="/" className="hover:text-foreground">Home</Link>
-        <ChevronRight className="h-3.5 w-3.5"/>
-        <Link to="/shop" className="hover:text-foreground">Shop</Link>
-        <ChevronRight className="h-3.5 w-3.5"/>
+        <Link to="/" className="hover:text-foreground">
+          Home
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <Link to="/shop" className="hover:text-foreground">
+          Shop
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-foreground truncate">{product.name}</span>
       </div>
 
       <div className="container-px mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 lg:gap-16">
         <div className="space-y-4">
           <div className="aspect-square rounded-3xl bg-surface overflow-hidden">
-            <img src={allImages[selectedImage]} alt={product.name} loading="lazy" className="h-full w-full object-cover"/>
+            <img src={allImages[selectedImage]} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
           </div>
           {allImages.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2">
               {allImages.map((image, index) => (
                 <button
                   key={index}
+                  type="button"
                   onClick={() => setSelectedImage(index)}
                   className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? 'border-primary' : 'border-border hover:border-primary/50'
+                    selectedImage === index ? "border-primary" : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover"/>
+                  <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -99,7 +123,9 @@ function ProductPage() {
 
         <div>
           {product.badge && (
-            <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider">{product.badge}</span>
+            <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider">
+              {product.badge}
+            </span>
           )}
           <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
           <p className="mt-3 text-muted-foreground text-lg">{product.tagline}</p>
@@ -126,9 +152,7 @@ function ProductPage() {
               <div className="flex items-center gap-3">
                 {formatKES(displayPrice)}
                 {displayOriginalPrice && (
-                  <span className="text-lg text-muted-foreground line-through">
-                    {formatKES(displayOriginalPrice)}
-                  </span>
+                  <span className="text-lg text-muted-foreground line-through">{formatKES(displayOriginalPrice)}</span>
                 )}
               </div>
             ) : (
@@ -145,11 +169,26 @@ function ProductPage() {
           {product.price && (
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center border rounded-full">
-                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="p-3 hover:text-primary" aria-label="Decrease quantity"><Minus className="h-4 w-4"/></button>
+                <button
+                  type="button"
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="p-3 hover:text-primary"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
                 <span className="px-3 font-medium tabular-nums w-8 text-center">{qty}</span>
-                <button type="button" onClick={() => setQty(qty + 1)} className="p-3 hover:text-primary" aria-label="Increase quantity"><Plus className="h-4 w-4"/></button>
+                <button type="button" onClick={() => setQty(qty + 1)} className="p-3 hover:text-primary" aria-label="Increase quantity">
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
-              <Button type="button" size="lg" className="flex-1 rounded-full h-12 hidden md:inline-flex" onClick={handleAdd} aria-label={`Add ${qty} ${product.name} to cart`}>
+              <Button
+                type="button"
+                size="lg"
+                className="flex-1 rounded-full h-12 hidden md:inline-flex"
+                onClick={handleAdd}
+                aria-label={`Add ${qty} ${product.name} to cart`}
+              >
                 Add {qty} to cart
               </Button>
             </div>
@@ -173,16 +212,30 @@ function ProductPage() {
               { icon: Smartphone, t: "M-PESA" },
             ].map((b) => (
               <div key={b.t} className="p-3 rounded-xl bg-surface border border-border/60 text-center">
-                <b.icon className="h-4 w-4 mx-auto text-primary"/>
+                <b.icon className="h-4 w-4 mx-auto text-primary" />
                 <div className="mt-1 font-medium">{b.t}</div>
               </div>
             ))}
           </div>
 
           <div className="mt-10 space-y-6 text-sm leading-relaxed">
-            <Section title="Description"><p>{product.description}</p></Section>
-            <Section title="How to use"><ul className="list-disc pl-5 space-y-1">{product.usage.map((u: string) => <li key={u}>{u}</li>)}</ul></Section>
-            <Section title="Safety precautions"><ul className="list-disc pl-5 space-y-1">{product.safety.map((u: string) => <li key={u}>{u}</li>)}</ul></Section>
+            <Section title="Description">
+              <p>{product.description}</p>
+            </Section>
+            <Section title="How to use">
+              <ul className="list-disc pl-5 space-y-1">
+                {product.usage.map((u: string) => (
+                  <li key={u}>{u}</li>
+                ))}
+              </ul>
+            </Section>
+            <Section title="Safety precautions">
+              <ul className="list-disc pl-5 space-y-1">
+                {product.safety.map((u: string) => (
+                  <li key={u}>{u}</li>
+                ))}
+              </ul>
+            </Section>
             <Section title="Specifications">
               <dl className="grid grid-cols-2 gap-y-2">
                 {product.specs.map((s: { label: string; value: string }) => (
@@ -201,7 +254,9 @@ function ProductPage() {
         <div className="container-px mx-auto max-w-7xl mt-20">
           <h2 className="font-display text-2xl md:text-3xl font-bold mb-8">You might also like</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {related.map((p, i) => <ProductCard product={p} key={p.slug} index={i}/>)}
+            {related.map((p, i) => (
+              <ProductCard product={p} key={p.slug} index={i} />
+            ))}
           </div>
         </div>
       )}

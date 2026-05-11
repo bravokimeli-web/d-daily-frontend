@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { products, categories, type Category } from "@/data/products";
+import { categories, type Category } from "@/data/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { z } from "zod";
+import type { Product } from "@/data/products";
+import { fetchActiveStorefrontProducts } from "@/lib/storefrontCatalog";
+import { toast } from "sonner";
 
 const searchSchema = z.object({
   category: z.enum(["pest-control", "lighting", "home-protection", "farm-protection"]).optional(),
@@ -18,10 +21,33 @@ function ShopPage() {
   const search = Route.useSearch();
   const [q, setQ] = useState(search.q ?? "");
   const cat = search.category;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setQ(search.q ?? "");
   }, [search.q]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const list = await fetchActiveStorefrontProducts();
+        if (!cancelled) setProducts(list);
+      } catch {
+        if (!cancelled) {
+          toast.error("Could not load products. Check your connection.");
+          setProducts([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const query = q.trim() || search.q;
 
@@ -87,25 +113,36 @@ function ShopPage() {
         )}
       </div>
 
-      <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-        {filtered.map((p, i) => <ProductCard product={p} key={p.slug} index={i}/>)}
-      </div>
-      {filtered.length === 0 && (
-        <div className="py-20 text-center text-muted-foreground">
-          <p className="text-lg font-semibold text-foreground">No products match your filters.</p>
-          <p className="mt-2">Try clearing category filters or searching with a different keyword.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Link to="/shop" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-              View all products
-            </Link>
-            <Link
-              to="/shop"
-              className="rounded-full border border-input px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary"
-            >
-              Clear filters
-            </Link>
+      {loading ? (
+        <div className="mt-16 text-center text-muted-foreground">Loading products…</div>
+      ) : (
+        <>
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {filtered.map((p, i) => (
+              <ProductCard product={p} key={p.slug} index={i} />
+            ))}
           </div>
-        </div>
+          {filtered.length === 0 && (
+            <div className="py-20 text-center text-muted-foreground">
+              <p className="text-lg font-semibold text-foreground">No products match your filters.</p>
+              <p className="mt-2">Try clearing category filters or searching with a different keyword.</p>
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                <Link
+                  to="/shop"
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  View all products
+                </Link>
+                <Link
+                  to="/shop"
+                  className="rounded-full border border-input px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary"
+                >
+                  Clear filters
+                </Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

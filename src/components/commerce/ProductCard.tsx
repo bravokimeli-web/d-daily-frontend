@@ -2,12 +2,14 @@ import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import type { Product } from "@/data/products";
 import { formatKES } from "@/data/products";
+import { resolveMediaUrl } from "@/lib/api";
 import { useCart } from "@/store/carts";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const add = useCart((s) => s.add);
+  const imageSrc = resolveMediaUrl(String(product.image));
 
   return (
     <motion.div
@@ -19,7 +21,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     >
       <Link to="/product/$slug" params={{ slug: product.slug }} className="block aspect-square overflow-hidden bg-surface">
         <img
-          src={product.image}
+          src={imageSrc}
           alt={product.name}
           loading="lazy"
           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -59,7 +61,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               size="icon"
               variant="ghost"
               aria-label={`Add ${product.name} to cart`}
-              onClick={() => add({ slug: product.slug, name: product.name, price: product.price!, image: product.image })}
+              onClick={() => add({ slug: product.slug, name: product.name, price: product.price!, image: imageSrc })}
               className="rounded-full hover:bg-primary hover:text-primary-foreground"
             >
               <ShoppingBag className="h-4 w-4" />
