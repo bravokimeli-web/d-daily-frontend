@@ -32,6 +32,24 @@ export function getApiBaseUrl(): string {
   return normalizeHttpBase(rawInput);
 }
 
+/** Origin for static files (`/uploads/...`) — strips `/api` from the API base. */
+export function getAssetBaseUrl(): string {
+  const api = getApiBaseUrl();
+  if (/^https?:\/\//i.test(api)) {
+    return api.replace(/\/api\/?$/, "");
+  }
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:5000";
+}
+
+/** Turn stored paths like `/uploads/...` into a browser-openable absolute URL. */
+export function resolveMediaUrl(pathOrUrl: string): string {
+  if (!pathOrUrl) return "";
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = getAssetBaseUrl().replace(/\/+$/, "");
+  return pathOrUrl.startsWith("/") ? `${base}${pathOrUrl}` : `${base}/${pathOrUrl}`;
+}
+
 const BASE_URL = getApiBaseUrl();
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -65,8 +83,12 @@ export interface Product {
 }
 
 export const productsApi = {
-  getAll: (params?: { category?: string; search?: string }) => {
-    const qs = new URLSearchParams(params as Record<string, string>).toString();
+  getAll: (params?: { category?: string; search?: string; active?: boolean }) => {
+    const p = new URLSearchParams();
+    if (params?.category) p.set("category", params.category);
+    if (params?.search) p.set("search", params.search);
+    if (params?.active !== undefined) p.set("active", String(params.active));
+    const qs = p.toString();
     return request<{ success: boolean; data: Product[] }>(`/products${qs ? `?${qs}` : ""}`);
   },
   getBySlug: (slug: string) =>

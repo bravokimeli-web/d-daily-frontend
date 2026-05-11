@@ -1,11 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getApiBaseUrl } from "@/lib/api";
-import { hasAdminAccess, getAdminEmail, clearAdminEmail, ADMIN_EMAIL_PUBLIC } from "@/lib/admin";
+import { getApiBaseUrl, resolveMediaUrl } from "@/lib/api";
+import { hasAdminAccess, getAdminEmail, clearAdminEmail } from "@/lib/admin";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Upload, Trash2, Eye, FileText, CheckCircle, XCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Trash2, Eye, FileText, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+
+function formatAppliedAt(value: string | Date | undefined): string {
+  if (!value) return "—";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
+}
+
+const RESELLER_DOC_LABELS: Record<string, string> = {
+  id_front: "ID front",
+  id_back: "ID back",
+  kra_pin: "KRA PIN",
+  additional: "Additional",
+};
 
 export const Route = createFileRoute("/admin")({
   component: () => {
@@ -13,13 +27,32 @@ export const Route = createFileRoute("/admin")({
     const adminEmail = getAdminEmail();
     const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "orders" | "resellers" | "settings">("dashboard");
     const [products, setProducts] = useState<any[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
     const [orders, setOrders] = useState<any[]>([]);
     const [resellers, setResellers] = useState<any[]>([]);
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [dropActive, setDropActive] = useState(false);
     const [loadingResellers, setLoadingResellers] = useState(false);
     const [resellerFilter, setResellerFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+
+    const loadWebsiteProducts = useCallback(async () => {
+      setLoadingProducts(true);
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/products?active=true`);
+        if (!response.ok) throw new Error("Failed to fetch products");
+        const data = await response.json();
+        setProducts(data.data || []);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load products from the server");
+        setProducts([]);
+      } finally {
+        setLoadingProducts(false);
+      }
+    }, []);
+
+    useEffect(() => {
+      if (!isAdmin) return;
+      void loadWebsiteProducts();
+    }, [isAdmin, loadWebsiteProducts]);
 
     // Fetch resellers on mount and when filter changes
     useEffect(() => {
@@ -73,6 +106,22 @@ export const Route = createFileRoute("/admin")({
       }
     };
 
+    const handleDeleteReseller = async (resellerId: string) => {
+      if (!window.confirm("Permanently delete this application and its uploaded files? This cannot be undone.")) return;
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/admin/resellers/${resellerId}`, {
+          method: "DELETE",
+          headers: { "x-admin-email": adminEmail || "" },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || "Failed to delete");
+        setResellers((prev) => prev.filter((r) => r._id !== resellerId));
+        toast.success("Application deleted");
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    };
+
     if (!isAdmin) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -102,57 +151,77 @@ export const Route = createFileRoute("/admin")({
       window.location.href = "/";
     };
 
-    const handleImageSelected = (file: File | null) => {
-      if (!file) {
-        setImageFile(null);
-        setImagePreview(null);
+    const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const name = (formData.get("name") as string)?.trim();
+      const imageUrl = (formData.get("imageUrl") as string)?.trim();
+      const description = (formData.get("description") as string)?.trim() || name;
+      const priceRaw = formData.get("price") as string;
+      const category = formData.get("category") as string;
+      const stockRaw = (formData.get("stock") as string) || "0";
+
+      if (!name || !imageUrl || !category) {
+        toast.error("Name, image URL, and category are required");
         return;
       }
 
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    };
+      const slug =
+        name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "") || `product-${Date.now()}`;
 
-    const handleAddProduct = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (!imageFile) return;
-
-      const formData = new FormData(e.currentTarget);
-      const newProduct = {
-        id: Date.now(),
-        name: formData.get("name"),
-        slug: (formData.get("name") as string)?.toLowerCase().replace(/\s+/g, "-"),
-        price: parseFloat(formData.get("price") as string),
-        image: imagePreview,
-        category: formData.get("category"),
-        description: formData.get("description"),
-      };
-      setProducts([...products, newProduct]);
-      (e.target as HTMLFormElement).reset();
-      setImageFile(null);
-      setImagePreview(null);
-    };
-
-    const handleDeleteProduct = (id: number) => {
-      setProducts(products.filter((p) => p.id !== id));
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDropActive(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith("image/")) {
-        handleImageSelected(file);
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/admin/products`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-email": adminEmail || "",
+          },
+          body: JSON.stringify({
+            slug,
+            name,
+            price: parseFloat(priceRaw),
+            category,
+            image: imageUrl,
+            tagline: description.slice(0, 120),
+            description,
+            usage: [],
+            safety: [],
+            specs: [],
+            stock: Math.max(0, parseInt(stockRaw, 10) || 0),
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          toast.error(typeof data.message === "string" ? data.message : "Failed to create product");
+          return;
+        }
+        toast.success("Product created");
+        (e.target as HTMLFormElement).reset();
+        await loadWebsiteProducts();
+      } catch (err) {
+        toast.error((err as Error).message);
       }
     };
 
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDropActive(true);
-    };
-
-    const handleDragLeave = () => {
-      setDropActive(false);
+    const handleDeleteProduct = async (slug: string) => {
+      if (!window.confirm("Remove this product from the website? It will be hidden from shoppers.")) return;
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/admin/products/${encodeURIComponent(slug)}`, {
+          method: "DELETE",
+          headers: { "x-admin-email": adminEmail || "" },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || "Failed to remove product");
+        toast.success("Product removed from the site");
+        await loadWebsiteProducts();
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
     };
 
     return (
@@ -260,6 +329,9 @@ export const Route = createFileRoute("/admin")({
             <div className="space-y-8">
               <div>
                 <h2 className="text-xl font-bold text-foreground mb-4">Add New Product</h2>
+                <p className="text-sm text-muted-foreground mb-4 max-w-2xl">
+                  New products are saved to the server. Use a public image URL (for example from your CDN or an image host).
+                </p>
                 <form onSubmit={handleAddProduct} className="rounded-lg border border-border bg-card p-6 space-y-4 max-w-2xl">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -284,19 +356,43 @@ export const Route = createFileRoute("/admin")({
                     </div>
                   </div>
 
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Category</label>
+                      <select
+                        name="category"
+                        className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
+                        required
+                      >
+                        <option value="">Select category</option>
+                        <option value="pest-control">Pest Control</option>
+                        <option value="lighting">Lighting</option>
+                        <option value="home-protection">Home Protection</option>
+                        <option value="farm-protection">Farm Protection</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Stock</label>
+                      <input
+                        name="stock"
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="text-sm font-medium">Category</label>
-                    <select
-                      name="category"
+                    <label className="text-sm font-medium">Image URL</label>
+                    <input
+                      name="imageUrl"
+                      type="text"
+                      inputMode="url"
+                      placeholder="https://… or /uploads/…"
                       className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
                       required
-                    >
-                      <option value="">Select category</option>
-                      <option value="pest-control">Pest Control</option>
-                      <option value="lighting">Lighting</option>
-                      <option value="home-protection">Home Protection</option>
-                      <option value="farm-protection">Farm Protection</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -310,69 +406,50 @@ export const Route = createFileRoute("/admin")({
                     />
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Product image</label>
-                    <div
-                      className={`mt-2 rounded-2xl border-2 border-dashed p-5 text-center transition-colors ${
-                        dropActive ? "border-primary bg-primary/5" : "border-input bg-background"
-                      }`}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                    >
-                      <input
-                        id="product-image"
-                        name="image"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(event) => {
-                          handleImageSelected(event.target.files?.[0] ?? null);
-                        }}
-                      />
-                      <label htmlFor="product-image" className="cursor-pointer block">
-                        {imagePreview ? (
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="mx-auto h-40 w-auto rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="space-y-3 text-sm text-muted-foreground">
-                            <p className="font-semibold text-foreground">Drag & drop an image or tap to upload</p>
-                            <p>Supported formats: JPG, PNG, WEBP</p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
                   <Button type="submit" className="w-full">
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Package className="h-4 w-4 mr-2" />
                     Add Product
                   </Button>
                 </form>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-foreground mb-4">Products ({products.length})</h2>
-                {products.length === 0 ? (
-                  <p className="text-muted-foreground">No products added yet.</p>
+                <h2 className="text-xl font-bold text-foreground mb-2">Live on website</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Active products returned by the API (same source the storefront can use).
+                </p>
+                {loadingProducts ? (
+                  <p className="text-muted-foreground">Loading products…</p>
+                ) : products.length === 0 ? (
+                  <p className="text-muted-foreground">No active products in the database.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {products.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card">
-                        <div className="flex-1">
-                          <p className="font-medium">{p.name}</p>
-                          <p className="text-sm text-muted-foreground">{p.category} • KES {p.price}</p>
+                      <div
+                        key={p._id || p.slug}
+                        className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex flex-1 gap-4 min-w-0">
+                          <img
+                            src={resolveMediaUrl(p.image)}
+                            alt=""
+                            className="h-16 w-16 shrink-0 rounded-lg object-cover border border-border bg-muted"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{p.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {p.category} · KES {p.price ?? "—"} · stock {p.stock ?? 0}
+                            </p>
+                            <p className="text-xs text-muted-foreground font-mono truncate">{p.slug}</p>
+                          </div>
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                          onClick={() => handleDeleteProduct(p.slug)}
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Delete
+                          Remove from site
                         </button>
                       </div>
                     ))}
@@ -461,86 +538,79 @@ export const Route = createFileRoute("/admin")({
                           <p className="text-sm text-muted-foreground">{reseller.email}</p>
                           <p className="text-sm text-muted-foreground">{reseller.phone}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Applied: {new Date(reseller.appliedAt).toLocaleDateString()}
+                            Applied: <span className="font-medium text-foreground">{formatAppliedAt(reseller.appliedAt)}</span>
                           </p>
                         </div>
                       </div>
 
-                      {/* Documents */}
-                      {Object.entries(reseller.documents || {}).some(([_, value]) => value) && (
-                        <div className="pt-4 border-t border-border">
-                          <p className="text-sm font-semibold text-foreground mb-3">Documents</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {reseller.documents?.id_front && (
-                              <a
-                                href={reseller.documents.id_front}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
-                              >
-                                <FileText className="h-4 w-4 text-primary" />
-                                <span className="text-sm truncate">ID Front</span>
-                              </a>
-                            )}
-                            {reseller.documents?.id_back && (
-                              <a
-                                href={reseller.documents.id_back}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
-                              >
-                                <FileText className="h-4 w-4 text-primary" />
-                                <span className="text-sm truncate">ID Back</span>
-                              </a>
-                            )}
-                            {reseller.documents?.kra_pin && (
-                              <a
-                                href={reseller.documents.kra_pin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
-                              >
-                                <FileText className="h-4 w-4 text-primary" />
-                                <span className="text-sm truncate">KRA PIN</span>
-                              </a>
-                            )}
-                            {reseller.documents?.additional && (
-                              <a
-                                href={reseller.documents.additional}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
-                              >
-                                <FileText className="h-4 w-4 text-primary" />
-                                <span className="text-sm truncate">Additional</span>
-                              </a>
-                            )}
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-sm font-semibold text-foreground mb-3">Uploaded documents</p>
+                        {Object.entries(reseller.documents || {}).some(([, v]) => v) ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {Object.entries(reseller.documents || {}).map(([key, raw]) => {
+                              if (!raw || typeof raw !== "string") return null;
+                              const href = resolveMediaUrl(raw);
+                              const label = RESELLER_DOC_LABELS[key] || key;
+                              const pathOnly = raw.split("?")[0];
+                              const isImage = /\.(jpe?g|png|gif|webp)$/i.test(pathOnly);
+                              return (
+                                <div key={key} className="rounded-lg border border-border bg-background overflow-hidden">
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
+                                  >
+                                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                                    <span className="text-sm font-medium truncate">{label}</span>
+                                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground ml-auto" />
+                                  </a>
+                                  {isImage && (
+                                    <a href={href} target="_blank" rel="noopener noreferrer" className="block border-t border-border bg-muted/30">
+                                      <img src={href} alt={label} className="max-h-40 w-full object-contain" />
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No documents uploaded with this application.</p>
+                        )}
+                      </div>
 
-                      {/* Actions */}
-                      {reseller.status === "pending" && (
-                        <div className="flex gap-2 pt-4 border-t border-border">
-                          <Button
-                            size="sm"
-                            onClick={() => handleResellerStatus(reseller._id, "approved")}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleResellerStatus(reseller._id, "rejected")}
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-2 pt-4 border-t border-border sm:flex-row sm:flex-wrap">
+                        {reseller.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleResellerStatus(reseller._id, "approved")}
+                              className="flex-1 bg-green-600 hover:bg-green-700 sm:flex-initial"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleResellerStatus(reseller._id, "rejected")}
+                              className="flex-1 sm:flex-initial"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-destructive/40 text-destructive hover:bg-destructive/10 sm:ml-auto"
+                          onClick={() => handleDeleteReseller(reseller._id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete application
+                        </Button>
+                      </div>
 
                       {reseller.notes && (
                         <div className="pt-4 border-t border-border">
