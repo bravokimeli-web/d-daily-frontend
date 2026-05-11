@@ -3,12 +3,33 @@
  * Thin wrapper around fetch for communicating with the Express backend.
  */
 
-/** Express mounts routes under `/api`. Accepts env with or without that suffix. */
+/** Production backend when `VITE_API_URL` is unset or invalid at build time (e.g. only `/api` on Vercel). */
+const DEFAULT_PRODUCTION_API = "https://d-daily-e-commerce-backend.onrender.com/api";
+
+/**
+ * Base URL for Express `/api` routes (no trailing slash).
+ * - Production: must be absolute `https://…`. Relative `/api` would POST to the static host → HTTP 405.
+ * - Development: if unset, uses `/api` + Vite proxy to `localhost:5000`.
+ */
 export function getApiBaseUrl(): string {
-  const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || "http://localhost:5000/api";
-  const base = raw.replace(/\/+$/, "");
-  if (base.endsWith("/api")) return base;
-  return `${base}/api`;
+  const rawInput = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+
+  const normalizeHttpBase = (s: string): string => {
+    const base = s.replace(/\/+$/, "");
+    if (base.endsWith("/api")) return base;
+    return `${base}/api`;
+  };
+
+  if (import.meta.env.DEV) {
+    if (!rawInput) return "/api";
+    if (!/^https?:\/\//i.test(rawInput)) return "/api";
+    return normalizeHttpBase(rawInput);
+  }
+
+  if (!rawInput || !/^https?:\/\//i.test(rawInput)) {
+    return DEFAULT_PRODUCTION_API;
+  }
+  return normalizeHttpBase(rawInput);
 }
 
 const BASE_URL = getApiBaseUrl();

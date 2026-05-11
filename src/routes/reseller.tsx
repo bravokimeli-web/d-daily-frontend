@@ -53,6 +53,11 @@ function ResellerPage() {
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        if (response.status === 405) {
+          errorMessage =
+            "HTTP 405 (wrong target). The form posted to a server that does not allow this POST. " +
+            `Check VITE_API_URL on your host (must be the Render/backend URL like https://….onrender.com/api). Current base: ${getApiBaseUrl()}`;
+        }
         try {
           const error = await response.json();
           console.log("Error response body:", error);
