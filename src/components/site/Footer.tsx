@@ -17,6 +17,7 @@ export function Footer() {
             <li><Link to="/shop" className="hover:text-primary transition-colors">All products</Link></li>
             <li><Link to="/categories" className="hover:text-primary transition-colors">Categories</Link></li>
             <li><Link to="/reseller" className="hover:text-primary transition-colors">Become a reseller</Link></li>
+            <li><Link to="/reseller/track" className="hover:text-primary transition-colors">Track reseller application</Link></li>
           </ul>
         </div>
         <div>

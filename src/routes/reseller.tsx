@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getApiBaseUrl } from "@/lib/api";
-import { CheckCircle2, Upload, TrendingUp, Wallet, Users } from "lucide-react";
+import { TrackResellerApplication } from "@/components/reseller/TrackResellerApplication";
+import { CheckCircle2, Upload, TrendingUp, Wallet, Users, Search } from "lucide-react";
 
 export const Route = createFileRoute("/reseller")({
   component: ResellerPage,
@@ -19,6 +20,7 @@ const schema = z.object({
 function ResellerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [appliedEmail, setAppliedEmail] = useState<string | null>(null);
   const [files, setFiles] = useState<{ id_front?: File; id_back?: File; kra_pin?: File; additional?: File }>({});
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -77,6 +79,7 @@ function ResellerPage() {
       const data = await response.json().catch(() => null);
       console.log("Submit success data:", data);
       toast.success("Application submitted successfully!");
+      setAppliedEmail(parsed.data.email);
       setDone(true);
     } catch (err) {
       toast.error((err as Error).message);
@@ -87,10 +90,40 @@ function ResellerPage() {
 
   if (done) {
     return (
-      <div className="container-px mx-auto max-w-xl py-24 text-center">
-        <CheckCircle2 className="h-14 w-14 text-success mx-auto"/>
-        <h1 className="mt-5 font-display text-3xl font-bold">Application received</h1>
-        <p className="mt-2 text-muted-foreground">Status: <strong>Pending</strong>. Our team will review and reach out within 2 business days.</p>
+      <div className="container-px mx-auto max-w-xl py-16 md:py-24">
+        <div className="text-center">
+          <CheckCircle2 className="h-14 w-14 text-success mx-auto" />
+          <h1 className="mt-5 font-display text-3xl font-bold">Application received</h1>
+          <p className="mt-2 text-muted-foreground">
+            Status: <strong>Pending</strong>. Our team will review and reach out within 2 business days.
+          </p>
+        </div>
+        <div className="mt-12 rounded-2xl border bg-card p-6 shadow-soft">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1">
+            <Search className="h-4 w-4 text-primary" />
+            Track your application
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Your email is filled in below. Check again anytime as your status updates.
+          </p>
+          <TrackResellerApplication initialEmail={appliedEmail ?? undefined} />
+        </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          <Link to="/reseller/track" className="text-primary font-medium hover:underline">
+            Open the dedicated tracking page
+          </Link>
+          {" · "}
+          <button
+            type="button"
+            className="text-primary font-medium hover:underline"
+            onClick={() => {
+              setDone(false);
+              setAppliedEmail(null);
+            }}
+          >
+            Submit another application
+          </button>
+        </p>
       </div>
     );
   }
@@ -133,7 +166,26 @@ function ResellerPage() {
               {submitting ? "Submitting…" : "Submit application"}
             </Button>
             <p className="text-xs text-muted-foreground text-center">Your documents are stored securely.</p>
+            <p className="text-xs text-center text-muted-foreground pt-2 border-t border-border">
+              Already applied?{" "}
+              <Link to="/reseller/track" className="text-primary font-medium hover:underline">
+                Track your application
+              </Link>
+            </p>
           </form>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-muted/20 py-16 md:py-20">
+        <div className="container-px mx-auto max-w-xl">
+          <h2 className="font-display text-2xl font-bold text-foreground">Track your application</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Enter the email you used when you applied. You will see your current status (pending, approved, or not approved)
+            and when you submitted — we do not show your documents or phone here.
+          </p>
+          <div className="mt-6">
+            <TrackResellerApplication />
+          </div>
         </div>
       </section>
     </div>

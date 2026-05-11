@@ -22,6 +22,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResellerTrackRouteImport } from './routes/reseller.track'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 
 const TermsRoute = TermsRouteImport.update({
@@ -89,6 +90,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResellerTrackRoute = ResellerTrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => ResellerRoute,
+} as any)
 const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
@@ -105,11 +111,12 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
-  '/reseller': typeof ResellerRoute
+  '/reseller': typeof ResellerRouteWithChildren
   '/safety': typeof SafetyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/reseller/track': typeof ResellerTrackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -121,11 +128,12 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
-  '/reseller': typeof ResellerRoute
+  '/reseller': typeof ResellerRouteWithChildren
   '/safety': typeof SafetyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/reseller/track': typeof ResellerTrackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -138,11 +146,12 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
-  '/reseller': typeof ResellerRoute
+  '/reseller': typeof ResellerRouteWithChildren
   '/safety': typeof SafetyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/reseller/track': typeof ResellerTrackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms'
     | '/product/$slug'
+    | '/reseller/track'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms'
     | '/product/$slug'
+    | '/reseller/track'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms'
     | '/product/$slug'
+    | '/reseller/track'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,7 +217,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   PrivacyRoute: typeof PrivacyRoute
-  ResellerRoute: typeof ResellerRoute
+  ResellerRoute: typeof ResellerRouteWithChildren
   SafetyRoute: typeof SafetyRoute
   ShopRoute: typeof ShopRoute
   TermsRoute: typeof TermsRoute
@@ -305,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reseller/track': {
+      id: '/reseller/track'
+      path: '/track'
+      fullPath: '/reseller/track'
+      preLoaderRoute: typeof ResellerTrackRouteImport
+      parentRoute: typeof ResellerRoute
+    }
     '/product/$slug': {
       id: '/product/$slug'
       path: '/product/$slug'
@@ -314,6 +333,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ResellerRouteChildren {
+  ResellerTrackRoute: typeof ResellerTrackRoute
+}
+
+const ResellerRouteChildren: ResellerRouteChildren = {
+  ResellerTrackRoute: ResellerTrackRoute,
+}
+
+const ResellerRouteWithChildren = ResellerRoute._addFileChildren(
+  ResellerRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -325,7 +356,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   PrivacyRoute: PrivacyRoute,
-  ResellerRoute: ResellerRoute,
+  ResellerRoute: ResellerRouteWithChildren,
   SafetyRoute: SafetyRoute,
   ShopRoute: ShopRoute,
   TermsRoute: TermsRoute,
