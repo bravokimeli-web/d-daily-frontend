@@ -67,7 +67,18 @@ function ProductPage() {
           <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
           <p className="mt-3 text-muted-foreground text-lg">{product.tagline}</p>
           <div className="mt-6 font-display text-3xl font-bold">
-            {product.price ? formatKES(product.price) : <span className="text-muted-foreground text-xl">Coming soon</span>}
+            {product.price ? (
+              <div className="flex items-center gap-3">
+                {formatKES(product.price)}
+                {product.originalPrice && (
+                  <span className="text-lg text-muted-foreground line-through">
+                    {formatKES(product.originalPrice)}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-muted-foreground text-xl">Coming soon</span>
+            )}
           </div>
 
           {currentCartQty > 0 && (

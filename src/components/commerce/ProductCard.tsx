@@ -40,7 +40,18 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         <p className="text-xs text-muted-foreground line-clamp-2">{product.tagline}</p>
         <div className="mt-auto pt-3 flex items-center justify-between">
           <div className="font-display font-bold text-lg">
-            {product.price ? formatKES(product.price) : <span className="text-sm text-muted-foreground">Coming soon</span>}
+            {product.price ? (
+              <div className="flex items-center gap-2">
+                {formatKES(product.price)}
+                {product.originalPrice && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatKES(product.originalPrice)}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">Coming soon</span>
+            )}
           </div>
           {product.price && (
             <Button

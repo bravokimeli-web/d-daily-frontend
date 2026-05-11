@@ -7,6 +7,9 @@ import fly from "@/assets/products/fly-catcher.jpeg";
 import wrist from "@/assets/products/mosquito-wristband.jpeg";
 import solar200w from "@/assets/products/200w solar 2k.jpeg";
 import magneticWindow from "@/assets/products/magnetic-window.jpeg";
+import kit4in1 from "@/assets/products/4-1-image.jpeg";
+import kitComplete from "@/assets/products/complete-home-kit.jpeg";
+import kitBeforeAfter from "@/assets/products/be-after-4-1.jpeg";
 
 export type Category = "pest-control" | "lighting" | "home-protection" | "farm-protection";
 
@@ -14,6 +17,7 @@ export interface Product {
   slug: string;
   name: string;
   price: number | null;
+  originalPrice?: number;
   category: Category;
   image: string;
   tagline: string;
@@ -36,6 +40,7 @@ export const products: Product[] = [
     slug: "insecticidal-spray",
     name: "Insecticidal Spray 500ml",
     price: 999,
+    originalPrice: 1499,
     category: "pest-control",
     image: spray,
     tagline: "Fast knockdown for cockroaches, bed bugs, ants & fleas.",
@@ -62,6 +67,7 @@ export const products: Product[] = [
     slug: "insecticidal-powder",
     name: "Insecticidal Powder Sachet",
     price: 80,
+    originalPrice: 149,
     category: "pest-control",
     image: powder,
     tagline: "Fipronil 0.3% — affordable, effective, single-use sachet.",
@@ -76,7 +82,8 @@ export const products: Product[] = [
   {
     slug: "snake-repellent-powder",
     name: "Snake Repellent Powder 500g",
-    price: 2399,
+    price: 1980,
+    originalPrice: 3999,
     category: "home-protection",
     image: snake,
     tagline: "Long-lasting perimeter protection against snakes.",
@@ -111,6 +118,7 @@ export const products: Product[] = [
     slug: "hexazinone-herbicide",
     name: "Hexazinone Herbicide 1kg",
     price: 2999,
+    originalPrice: 3999,
     category: "farm-protection",
     image: hex,
     tagline: "Granule formulation, 5% Hexazinone — for weed-free fields.",
@@ -127,6 +135,7 @@ export const products: Product[] = [
     slug: "automatic-fly-catcher",
     name: "Automatic Fly Catcher (4 Units)",
     price: 169,
+    originalPrice: 200,
     category: "pest-control",
     image: fly,
     tagline: "No baiting, no poisons, no mess — just results.",
@@ -142,7 +151,8 @@ export const products: Product[] = [
   {
     slug: "mosquito-window-net",
     name: "Mosquito Window Net",
-    price: 2000,
+    price: 599,
+    originalPrice: 999,
     category: "home-protection",
     image: magneticWindow,
     tagline: "Breathable barrier — keep mosquitoes out, fresh air in.",
@@ -173,6 +183,7 @@ export const products: Product[] = [
     slug: "mosquito-repellent-wristband",
     name: "Mosquito Repellent Wristband",
     price: 199,
+    originalPrice: 299,
     category: "home-protection",
     image: wrist,
     tagline: "DEET-free wearable protection — great for kids and travel.",
@@ -180,6 +191,67 @@ export const products: Product[] = [
     usage: ["Wear on wrist or ankle.", "Store in sealed pouch when not in use."],
     safety: ["Skin-safe; remove if irritation occurs."],
     specs: [{ label: "Duration", value: "Up to 240 h" }],
+  },
+  {
+    slug: "snake-repellent-1000g",
+    name: "Snake Repellent Powder 1000g",
+    price: 3599,
+    originalPrice: 7998,
+    category: "home-protection",
+    image: snake,
+    tagline: "Extended perimeter protection for larger compounds.",
+    description:
+      "Outdoor-use granular powder that creates a stable barrier around your home compound or farm. Weather-resistant. Larger 1000g pack for bigger areas.",
+    usage: ["Apply a continuous 5cm-wide line around the perimeter.", "Reapply after heavy rain."],
+    safety: ["For outdoor use only.", "Wear gloves when applying."],
+    specs: [
+      { label: "Net weight", value: "1000 g" },
+      { label: "Use", value: "Outdoor / Perimeter" },
+    ],
+  },
+  {
+    slug: "snake-repellent-1500g",
+    name: "Snake Repellent Powder 1500g",
+    price: 5299,
+    originalPrice: 11997,
+    category: "home-protection",
+    image: snake,
+    tagline: "Maximum coverage for farms and large properties.",
+    description:
+      "Outdoor-use granular powder that creates a stable barrier around your home compound or farm. Weather-resistant. Largest 1500g pack for extensive coverage.",
+    usage: ["Apply a continuous 5cm-wide line around the perimeter.", "Reapply after heavy rain."],
+    safety: ["For outdoor use only.", "Wear gloves when applying."],
+    specs: [
+      { label: "Net weight", value: "1500 g" },
+      { label: "Use", value: "Outdoor / Perimeter" },
+    ],
+  },
+  {
+    slug: "4-in-1-home-pest-control-kit",
+    name: "4-in-1 Home Pest Control Kit",
+    price: 3599,
+    originalPrice: 6232,
+    category: "pest-control",
+    image: kit4in1,
+    tagline: "Complete home protection — spray, powder, repellent & traps.",
+    description: "Comprehensive pest control kit with insecticidal spray, powder, snake repellent, and fly catchers. Everything you need for a pest-free home.",
+    usage: [
+      "Use spray for immediate knockdown.",
+      "Apply powder in cracks and corners.",
+      "Sprinkle repellent around perimeter.",
+      "Hang fly catchers in problem areas.",
+    ],
+    safety: [
+      "Keep out of reach of children and pets.",
+      "Wear gloves when applying powders.",
+      "Ventilate areas after spraying.",
+    ],
+    specs: [
+      { label: "Includes", value: "Spray, powder, repellent, fly catchers" },
+      { label: "Coverage", value: "Average 3-bedroom home" },
+      { label: "Duration", value: "Up to 3 months" },
+    ],
+    badge: "Complete Solution",
   },
 ];
 
