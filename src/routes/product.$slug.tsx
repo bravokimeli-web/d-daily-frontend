@@ -1,0 +1,179 @@
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useState } from "react";
+import { getProduct, products, formatKES } from "@/data/products";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/store/carts";
+import { Truck, ShieldCheck, Smartphone, Minus, Plus, ChevronRight } from "lucide-react";
+import { ProductCard } from "@/components/commerce/ProductCard";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/product/$slug")({
+  loader: ({ params }) => {
+    const product = getProduct(params.slug);
+    if (!product) throw notFound();
+    return { product };
+  },
+  component: ProductPage,
+  notFoundComponent: () => (
+    <div className="container-px mx-auto max-w-7xl py-24 text-center">
+      <h1 className="font-display text-3xl font-bold">Product not found</h1>
+      <Button asChild className="mt-6"><Link to="/shop">Back to shop</Link></Button>
+    </div>
+  ),
+});
+
+function ProductPage() {
+  const { product } = Route.useLoaderData();
+  const [qty, setQty] = useState(1);
+  const add = useCart((s) => s.add);
+  const cartItem = useCart((s) => s.items.find((item) => item.slug === product.slug));
+  const related = products.filter((p) => p.category === product.category && p.slug !== product.slug && p.price).slice(0, 4);
+  const currentCartQty = cartItem?.qty ?? 0;
+  const totalPrice = product.price ? product.price * qty : 0;
+
+  const handleAdd = () => {
+    if (!product.price) return;
+    add({ slug: product.slug, name: product.name, price: product.price, image: product.image }, qty);
+    toast.success(`${product.name} added to cart!`, {
+      description: "Ready to checkout or keep shopping?",
+      action: {
+        label: "Continue shopping",
+        onClick: () => {
+          // This will keep the user on the current page to continue browsing
+        },
+      },
+    });
+  };
+
+  return (
+    <div className="pb-32 md:pb-12">
+      <div className="container-px mx-auto max-w-7xl py-6 text-sm text-muted-foreground flex items-center gap-1.5">
+        <Link to="/" className="hover:text-foreground">Home</Link>
+        <ChevronRight className="h-3.5 w-3.5"/>
+        <Link to="/shop" className="hover:text-foreground">Shop</Link>
+        <ChevronRight className="h-3.5 w-3.5"/>
+        <span className="text-foreground truncate">{product.name}</span>
+      </div>
+
+      <div className="container-px mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="aspect-square rounded-3xl bg-surface overflow-hidden">
+          <img src={product.image} alt={product.name} loading="lazy" className="h-full w-full object-cover"/>
+        </div>
+
+        <div>
+          {product.badge && (
+            <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider">{product.badge}</span>
+          )}
+          <h1 className="mt-3 font-display text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
+          <p className="mt-3 text-muted-foreground text-lg">{product.tagline}</p>
+          <div className="mt-6 font-display text-3xl font-bold">
+            {product.price ? formatKES(product.price) : <span className="text-muted-foreground text-xl">Coming soon</span>}
+          </div>
+
+          {currentCartQty > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary-soft px-3 py-1 text-sm text-primary">
+              In cart: {currentCartQty} item{currentCartQty === 1 ? "" : "s"}
+            </div>
+          )}
+
+          {product.price && (
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center border rounded-full">
+                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="p-3 hover:text-primary" aria-label="Decrease quantity"><Minus className="h-4 w-4"/></button>
+                <span className="px-3 font-medium tabular-nums w-8 text-center">{qty}</span>
+                <button type="button" onClick={() => setQty(qty + 1)} className="p-3 hover:text-primary" aria-label="Increase quantity"><Plus className="h-4 w-4"/></button>
+              </div>
+              <Button type="button" size="lg" className="flex-1 rounded-full h-12 hidden md:inline-flex" onClick={handleAdd} aria-label={`Add ${qty} ${product.name} to cart`}>
+                Add {qty} to cart
+              </Button>
+            </div>
+          )}
+
+          {currentCartQty > 0 && (
+            <div className="mt-4 flex gap-3">
+              <Button asChild variant="outline" size="lg" className="flex-1 rounded-full">
+                <Link to="/shop">Continue shopping</Link>
+              </Button>
+              <Button asChild size="lg" className="flex-1 rounded-full">
+                <Link to="/cart">View cart</Link>
+              </Button>
+            </div>
+          )}
+
+          <div className="mt-8 grid grid-cols-3 gap-3 text-xs">
+            {[
+              { icon: Truck, t: "Nationwide" },
+              { icon: ShieldCheck, t: "Quality assured" },
+              { icon: Smartphone, t: "M-PESA" },
+            ].map((b) => (
+              <div key={b.t} className="p-3 rounded-xl bg-surface border border-border/60 text-center">
+                <b.icon className="h-4 w-4 mx-auto text-primary"/>
+                <div className="mt-1 font-medium">{b.t}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 space-y-6 text-sm leading-relaxed">
+            <Section title="Description"><p>{product.description}</p></Section>
+            <Section title="How to use"><ul className="list-disc pl-5 space-y-1">{product.usage.map((u: string) => <li key={u}>{u}</li>)}</ul></Section>
+            <Section title="Safety precautions"><ul className="list-disc pl-5 space-y-1">{product.safety.map((u: string) => <li key={u}>{u}</li>)}</ul></Section>
+            <Section title="Specifications">
+              <dl className="grid grid-cols-2 gap-y-2">
+                {product.specs.map((s: { label: string; value: string }) => (
+                  <div key={s.label} className="contents">
+                    <dt className="text-muted-foreground">{s.label}</dt>
+                    <dd className="font-medium">{s.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Section>
+          </div>
+        </div>
+      </div>
+
+      {related.length > 0 && (
+        <div className="container-px mx-auto max-w-7xl mt-20">
+          <h2 className="font-display text-2xl md:text-3xl font-bold mb-8">You might also like</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {related.map((p, i) => <ProductCard product={p} key={p.slug} index={i}/>)}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile sticky CTA */}
+      {product.price && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-3 z-30">
+          {currentCartQty > 0 ? (
+            <div className="flex gap-3">
+              <Button asChild variant="outline" className="flex-1 rounded-full h-11">
+                <Link to="/shop">Continue shopping</Link>
+              </Button>
+              <Button asChild className="flex-1 rounded-full h-11">
+                <Link to="/cart">View cart ({currentCartQty})</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="font-bold">{formatKES(totalPrice)}</div>
+              </div>
+              <Button className="flex-1 rounded-full h-11" onClick={handleAdd} aria-label={`Add ${qty} items to cart`}>
+                Add to cart
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="font-display font-bold text-base mb-2">{title}</h3>
+      <div className="text-foreground/80">{children}</div>
+    </div>
+  );
+}
