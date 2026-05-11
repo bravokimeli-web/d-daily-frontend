@@ -44,18 +44,36 @@ function ResellerPage() {
       if (files.additional) submitData.append("additional", files.additional);
 
       const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      const response = await fetch(`${baseURL}/reseller/apply`, {
+      const response = await fetch(`${baseURL}/reseller/apply-simple`, {
         method: "POST",
-        body: submitData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: parsed.data.full_name,
+          phone: parsed.data.phone,
+          email: parsed.data.email,
+        }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to submit application");
+        let errorMessage = "Failed to submit application";
+        try {
+          const error = await response.json();
+          errorMessage = error.message || errorMessage;
+        } catch (parseError) {
+          // If response body is empty or not JSON, use status text
+          errorMessage = response.statusText || `HTTP ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      setDone(true);
-      toast.success("Application submitted successfully!");
+      // Success - try to parse response (optional)
+      try {
+        await response.json();
+      } catch (e) {
+        // Response body might be empty, that's ok
+      }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
