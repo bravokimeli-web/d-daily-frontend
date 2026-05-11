@@ -3,6 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getApiBaseUrl } from "@/lib/api";
 import { CheckCircle2, Upload, TrendingUp, Wallet, Users } from "lucide-react";
 
 export const Route = createFileRoute("/reseller")({
@@ -43,8 +44,7 @@ function ResellerPage() {
       if (files.kra_pin) submitData.append("kra_pin", files.kra_pin);
       if (files.additional) submitData.append("additional", files.additional);
 
-      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      const response = await fetch(`${baseURL}/reseller/apply-simple`, {
+      const response = await fetch(`${getApiBaseUrl()}/reseller/apply`, {
         method: "POST",
         body: submitData,
       });

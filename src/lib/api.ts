@@ -3,7 +3,15 @@
  * Thin wrapper around fetch for communicating with the Express backend.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api";
+/** Express mounts routes under `/api`. Accepts env with or without that suffix. */
+export function getApiBaseUrl(): string {
+  const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || "http://localhost:5000/api";
+  const base = raw.replace(/\/+$/, "");
+  if (base.endsWith("/api")) return base;
+  return `${base}/api`;
+}
+
+const BASE_URL = getApiBaseUrl();
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

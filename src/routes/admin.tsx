@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { getApiBaseUrl } from "@/lib/api";
 import { hasAdminAccess, getAdminEmail, clearAdminEmail, ADMIN_EMAIL_PUBLIC } from "@/lib/admin";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,7 @@ export const Route = createFileRoute("/admin")({
       const fetchResellers = async () => {
         setLoadingResellers(true);
         try {
-          const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-          const url = new URL(`${baseURL}/admin/resellers`);
+          const url = new URL(`${getApiBaseUrl()}/admin/resellers`);
           if (resellerFilter !== "all") {
             url.searchParams.append("status", resellerFilter);
           }
@@ -55,8 +55,7 @@ export const Route = createFileRoute("/admin")({
 
     const handleResellerStatus = async (resellerId: string, status: "approved" | "rejected", notes?: string) => {
       try {
-        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        const response = await fetch(`${baseURL}/admin/resellers/${resellerId}/status`, {
+        const response = await fetch(`${getApiBaseUrl()}/admin/resellers/${resellerId}/status`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
