@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { hasAdminAccess, getAdminEmail, clearAdminEmail, ADMIN_EMAIL_PUBLIC } from "@/lib/admin";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Upload, Trash2, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Upload, Trash2, Eye, FileText, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   component: () => {
@@ -16,6 +17,62 @@ export const Route = createFileRoute("/admin")({
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [dropActive, setDropActive] = useState(false);
+    const [loadingResellers, setLoadingResellers] = useState(false);
+    const [resellerFilter, setResellerFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+
+    // Fetch resellers on mount and when filter changes
+    useEffect(() => {
+      if (!isAdmin) return;
+
+      const fetchResellers = async () => {
+        setLoadingResellers(true);
+        try {
+          const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+          const url = new URL(`${baseURL}/admin/resellers`);
+          if (resellerFilter !== "all") {
+            url.searchParams.append("status", resellerFilter);
+          }
+
+          const response = await fetch(url.toString(), {
+            headers: { 
+              "x-admin-email": adminEmail || "",
+            },
+          });
+
+          if (!response.ok) throw new Error("Failed to fetch resellers");
+          const data = await response.json();
+          setResellers(data.data || []);
+        } catch (err) {
+          console.error("Error fetching resellers:", err);
+          toast.error("Failed to load reseller applications");
+        } finally {
+          setLoadingResellers(false);
+        }
+      };
+
+      fetchResellers();
+    }, [isAdmin, resellerFilter, adminEmail]);
+
+    const handleResellerStatus = async (resellerId: string, status: "approved" | "rejected", notes?: string) => {
+      try {
+        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        const response = await fetch(`${baseURL}/admin/resellers/${resellerId}/status`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-email": adminEmail || "",
+          },
+          body: JSON.stringify({ status, notes }),
+        });
+
+        if (!response.ok) throw new Error("Failed to update reseller");
+        const data = await response.json();
+        setResellers(resellers.map((r) => (r._id === resellerId ? data.data : r)));
+        toast.success(`Reseller ${status}`);
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    };
 
     if (!isAdmin) {
       return (
@@ -355,25 +412,143 @@ export const Route = createFileRoute("/admin")({
 
           {/* Resellers Tab */}
           {activeTab === "resellers" && (
-            <div>
-              <h2 className="text-xl font-bold text-foreground mb-4">Reseller Applications</h2>
-              {resellers.length === 0 ? (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground mb-4">Reseller Applications</h2>
+                <div className="flex gap-2 mb-4">
+                  {(["all", "pending", "approved", "rejected"] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setResellerFilter(filter)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        resellerFilter === filter
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {loadingResellers ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Loading...</p>
+                </div>
+              ) : resellers.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-12 text-center">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No reseller applications</p>
+                  <p className="text-muted-foreground">No {resellerFilter !== "all" ? resellerFilter : ""} reseller applications</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {resellers.map((reseller) => (
-                    <div key={reseller.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card">
-                      <div className="flex-1">
-                        <p className="font-medium">{reseller.name}</p>
-                        <p className="text-sm text-muted-foreground">{reseller.email}</p>
+                <div className="space-y-4">
+                  {resellers.map((reseller: any) => (
+                    <div key={reseller._id} className="rounded-lg border border-border bg-card p-6 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-foreground">{reseller.full_name}</h3>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              reseller.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : reseller.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {reseller.status.charAt(0).toUpperCase() + reseller.status.slice(1)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{reseller.email}</p>
+                          <p className="text-sm text-muted-foreground">{reseller.phone}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Applied: {new Date(reseller.appliedAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Approve</Button>
-                        <Button variant="destructive" size="sm">Reject</Button>
-                      </div>
+
+                      {/* Documents */}
+                      {Object.entries(reseller.documents || {}).some(([_, value]) => value) && (
+                        <div className="pt-4 border-t border-border">
+                          <p className="text-sm font-semibold text-foreground mb-3">Documents</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {reseller.documents?.id_front && (
+                              <a
+                                href={reseller.documents.id_front}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+                              >
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span className="text-sm truncate">ID Front</span>
+                              </a>
+                            )}
+                            {reseller.documents?.id_back && (
+                              <a
+                                href={reseller.documents.id_back}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+                              >
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span className="text-sm truncate">ID Back</span>
+                              </a>
+                            )}
+                            {reseller.documents?.kra_pin && (
+                              <a
+                                href={reseller.documents.kra_pin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+                              >
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span className="text-sm truncate">KRA PIN</span>
+                              </a>
+                            )}
+                            {reseller.documents?.additional && (
+                              <a
+                                href={reseller.documents.additional}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+                              >
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span className="text-sm truncate">Additional</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      {reseller.status === "pending" && (
+                        <div className="flex gap-2 pt-4 border-t border-border">
+                          <Button
+                            size="sm"
+                            onClick={() => handleResellerStatus(reseller._id, "approved")}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleResellerStatus(reseller._id, "rejected")}
+                            className="flex-1"
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+
+                      {reseller.notes && (
+                        <div className="pt-4 border-t border-border">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Admin Notes</p>
+                          <p className="text-sm text-muted-foreground">{reseller.notes}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

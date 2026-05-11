@@ -32,9 +32,30 @@ function ResellerPage() {
 
     setSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // Prepare FormData with files
+      const submitData = new FormData();
+      submitData.append("full_name", parsed.data.full_name);
+      submitData.append("phone", parsed.data.phone);
+      submitData.append("email", parsed.data.email);
+
+      if (files.id_front) submitData.append("id_front", files.id_front);
+      if (files.id_back) submitData.append("id_back", files.id_back);
+      if (files.kra_pin) submitData.append("kra_pin", files.kra_pin);
+      if (files.additional) submitData.append("additional", files.additional);
+
+      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+      const response = await fetch(`${baseURL}/reseller/apply`, {
+        method: "POST",
+        body: submitData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to submit application");
+      }
+
       setDone(true);
-      toast.success("Application submitted!");
+      toast.success("Application submitted successfully!");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
