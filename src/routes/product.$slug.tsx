@@ -6,25 +6,17 @@ import { useCart } from "@/store/carts";
 import { Truck, ShieldCheck, Smartphone, Minus, Plus, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { toast } from "sonner";
-import { getApiBaseUrl, resolveMediaUrl } from "@/lib/api";
-import { mapApiProductToStorefront, type ApiProductRow } from "@/lib/storefrontCatalog";
+import { resolveMediaUrl } from "@/lib/api";
+import { fetchActiveStorefrontProducts, fetchStorefrontProductOrStatic } from "@/lib/storefrontCatalog";
 
 export const Route = createFileRoute("/product/$slug")({
   loader: async ({ params }) => {
-    const base = getApiBaseUrl();
-    const slugEnc = encodeURIComponent(params.slug);
-    const res = await fetch(`${base}/products/${slugEnc}`);
-    if (!res.ok) throw notFound();
-    const json = (await res.json()) as { success?: boolean; data?: ApiProductRow };
-    if (!json.success || !json.data) throw notFound();
-    const product = mapApiProductToStorefront(json.data);
-
-    const allRes = await fetch(`${base}/products?active=true`);
-    const allJson = (await allRes.json()) as { data?: ApiProductRow[] };
-    const related = (allJson.data ?? [])
+    const product = await fetchStorefrontProductOrStatic(params.slug);
+    if (!product) throw notFound();
+    const allMerged = await fetchActiveStorefrontProducts();
+    const related = allMerged
       .filter((p) => p.slug !== product.slug && p.category === product.category && p.price)
-      .slice(0, 4)
-      .map(mapApiProductToStorefront);
+      .slice(0, 4);
 
     return { product, related };
   },

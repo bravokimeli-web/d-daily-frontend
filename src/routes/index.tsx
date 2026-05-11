@@ -8,7 +8,7 @@ import type { Product } from "@/data/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useAdminAccess } from "@/hooks/use-admin";
-import { fetchActiveStorefrontProducts } from "@/lib/storefrontCatalog";
+import { fetchActiveStorefrontProducts, mergeStaticAndApiProducts } from "@/lib/storefrontCatalog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -27,7 +27,7 @@ function HomePage() {
         const list = await fetchActiveStorefrontProducts();
         if (!c) setCatalog(list);
       } catch {
-        if (!c) setCatalog([]);
+        if (!c) setCatalog(mergeStaticAndApiProducts([]));
       }
     })();
     return () => {
@@ -88,7 +88,7 @@ function HomePage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {featured.length === 0 ? (
             <p className="col-span-full text-center text-muted-foreground py-8">
-              No products in the catalog yet. Add active products in the admin dashboard to show them here.
+              No priced products to highlight right now.
             </p>
           ) : (
             featured.map((p, i) => <ProductCard product={p} key={p.slug} index={i} />)

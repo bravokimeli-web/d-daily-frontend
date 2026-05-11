@@ -4,7 +4,7 @@ import { categories, type Category } from "@/data/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { z } from "zod";
 import type { Product } from "@/data/products";
-import { fetchActiveStorefrontProducts } from "@/lib/storefrontCatalog";
+import { fetchActiveStorefrontProducts, mergeStaticAndApiProducts } from "@/lib/storefrontCatalog";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
@@ -37,8 +37,8 @@ function ShopPage() {
         if (!cancelled) setProducts(list);
       } catch {
         if (!cancelled) {
-          toast.error("Could not load products. Check your connection.");
-          setProducts([]);
+          toast.error("Could not reach the server. Showing built-in catalog only.");
+          setProducts(mergeStaticAndApiProducts([]));
         }
       } finally {
         if (!cancelled) setLoading(false);

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { categories } from "@/data/products";
 import { useEffect, useState } from "react";
 import type { Product } from "@/data/products";
-import { fetchActiveStorefrontProducts } from "@/lib/storefrontCatalog";
+import { fetchActiveStorefrontProducts, mergeStaticAndApiProducts } from "@/lib/storefrontCatalog";
 import { resolveMediaUrl } from "@/lib/api";
 
 export const Route = createFileRoute("/categories")({
@@ -19,7 +19,7 @@ function CategoriesPage() {
         const list = await fetchActiveStorefrontProducts();
         if (!c) setProducts(list);
       } catch {
-        if (!c) setProducts([]);
+        if (!c) setProducts(mergeStaticAndApiProducts([]));
       }
     })();
     return () => {
