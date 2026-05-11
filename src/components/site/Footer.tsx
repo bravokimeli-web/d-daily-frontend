@@ -32,7 +32,7 @@ export function Footer() {
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Reach us</div>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary"/>Nairobi, Kenya</li>
+            <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary"/>Physical store: Embakasi, Nairobi, Kenya</li>
             <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-primary"/>+254 106555333</li>
             <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary"/>ddailykenya01@gmail.com
 </li>

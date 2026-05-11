@@ -11,7 +11,7 @@ export const Route = createFileRoute("/contact")({
         <ul className="mt-8 space-y-4 text-sm">
           <li className="flex items-center gap-3"><Phone className="h-5 w-5 text-primary"/>+254 106555333</li>
           <li className="flex items-center gap-3"><Mail className="h-5 w-5 text-primary"/>ddailykenya01@gmail.com</li>
-          <li className="flex items-center gap-3"><MapPin className="h-5 w-5 text-primary"/>Nairobi, Kenya</li>
+          <li className="flex items-center gap-3"><MapPin className="h-5 w-5 text-primary"/>Physical store — Embakasi, Nairobi, Kenya</li>
           <li className="flex items-center gap-3"><MessageCircle className="h-5 w-5 text-primary"/>WhatsApp via the floating button</li>
         </ul>
       </div>
