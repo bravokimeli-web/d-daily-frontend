@@ -44,11 +44,12 @@ function ResellerPage() {
       if (files.additional) submitData.append("additional", files.additional);
 
       const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      const response = await fetch(`${baseURL}/health`, {
-        method: "GET",
+      const response = await fetch(`${baseURL}/reseller/apply-simple`, {
+        method: "POST",
+        body: submitData,
       });
 
-      console.log("Health check response:", response.status, response.statusText);
+      console.log("Reseller submit response:", response.status, response.statusText);
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -58,7 +59,6 @@ function ResellerPage() {
           errorMessage = error.message || errorMessage;
         } catch (parseError) {
           console.log("Could not parse error response:", parseError);
-          // Response body might be empty or not JSON
           try {
             const text = await response.text();
             console.log("Error response text:", text);
@@ -69,12 +69,10 @@ function ResellerPage() {
         throw new Error(errorMessage);
       }
 
-      // Success - try to parse response (optional)
-      try {
-        await response.json();
-      } catch (e) {
-        // Response body might be empty, that's ok
-      }
+      const data = await response.json().catch(() => null);
+      console.log("Submit success data:", data);
+      toast.success("Application submitted successfully!");
+      setDone(true);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
