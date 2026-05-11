@@ -107,6 +107,7 @@ export const products: Product[] = [
     slug: "led-light-100w",
     name: "100W High Brightness LED Light",
     price: 1280,
+    originalPrice: 1600,
     category: "lighting",
     image: led,
     tagline: "Rechargeable, USB, IP65 — built for night markets & vendors.",
@@ -170,7 +171,8 @@ export const products: Product[] = [
   {
     slug: "solar-ceiling-light-200w",
     name: "200W Solar Ceiling Light",
-    price: 2000,
+    price: 2400,
+    originalPrice: 2800,
     category: "lighting",
     image: solar200w,
     tagline: "Bright, reliable, eco-friendly — power from the sun.",
