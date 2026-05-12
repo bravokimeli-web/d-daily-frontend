@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowRight, ShieldCheck, Truck, Smartphone, Sparkles, Star, Leaf, Bug, Lightbulb, Home, Settings } from "lucide-react";
+import { ArrowRight, ShieldCheck, Truck, Smartphone, Sparkles, Star, Leaf, Lightbulb, Home, Settings } from "lucide-react";
 import hero from "@/assets/hero-section.png";
 import { categories } from "@/data/products";
 import type { Product } from "@/data/products";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const catIcons = { "pest-control": Bug, lighting: Lightbulb, "home-protection": Home, "farm-protection": Leaf } as const;
+const catIcons = { lighting: Lightbulb, "home-protection": Home, "farm-protection": Leaf, "fashion-design": Sparkles } as const;
 
 function HomePage() {
   const { isAdmin } = useAdminAccess();
@@ -41,7 +41,7 @@ function HomePage() {
     <div>
       {/* HERO */}
       <section className="relative overflow-hidden min-h-screen">
-        <img src={hero} alt="D-Daily hero banner - pest control and home protection" className="absolute inset-0 w-full h-full object-cover" loading="eager" />
+        <img src={hero} alt="D-Daily hero banner - lighting, home and farm protection" className="absolute inset-0 w-full h-full object-cover" loading="eager" />
         {/* Overlay for text visibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
         
@@ -52,7 +52,7 @@ function HomePage() {
               <br />Every day.
             </h1>
             <p className="mt-5 text-base md:text-lg text-gray-200 max-w-xl leading-relaxed">
-              Trusted pest control, lighting and home-protection essentials — curated for Kenyan homes, farms and businesses. Fast delivery. M-PESA ready.
+              Trusted lighting, home and farm protection essentials — curated for Kenyan homes, farms and businesses. Fast delivery. M-PESA ready.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" className="rounded-full h-12 px-7 text-base">
@@ -180,7 +180,7 @@ function HomePage() {
               {
                 name: "John M.",
                 role: "Small farm owner",
-                quote: "The pest control options are strong and affordable. Delivery was smooth across Nairobi.",
+                quote: "The protection and lighting options are strong and affordable. Delivery was smooth across Nairobi.",
               },
               {
                 name: "Grace K.",

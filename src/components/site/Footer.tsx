@@ -8,7 +8,7 @@ export function Footer() {
         <div className="md:col-span-1">
           <div className="font-display font-bold text-xl">D-Daily Ltd</div>
           <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            Trusted home, farm and pest-protection essentials. Made for the African market — built to last.
+            Trusted home, farm and lighting essentials. Made for the African market — built to last.
           </p>
         </div>
         <div>

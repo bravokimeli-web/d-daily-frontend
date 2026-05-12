@@ -210,6 +210,7 @@ export const Route = createFileRoute("/admin")({
       const safety = linesToArray(formData.get("safety"));
       const specs = parseSpecLines(formData.get("specs"));
       const priceRaw = formData.get("price") as string;
+      const originalPriceRaw = (formData.get("originalPrice") as string) || "";
       const category = formData.get("category") as string;
       const stockRaw = (formData.get("stock") as string) || "0";
       const tagline = taglineField || description.slice(0, 120);
@@ -265,6 +266,7 @@ export const Route = createFileRoute("/admin")({
             slug,
             name,
             price: parseFloat(priceRaw),
+            originalPrice: originalPriceRaw ? parseFloat(originalPriceRaw) : undefined,
             category,
             image: imageForProduct,
             tagline,
@@ -442,6 +444,19 @@ export const Route = createFileRoute("/admin")({
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
+                      <label className="text-sm font-medium">Original price (optional)</label>
+                      <input
+                        name="originalPrice"
+                        type="number"
+                        placeholder="0.00"
+                        step="0.01"
+                        className="mt-2 w-full h-10 px-3 rounded-lg border border-input bg-background"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
                       <label className="text-sm font-medium">Category</label>
                       <select
                         name="category"
@@ -449,10 +464,10 @@ export const Route = createFileRoute("/admin")({
                         required
                       >
                         <option value="">Select category</option>
-                        <option value="pest-control">Pest Control</option>
                         <option value="lighting">Lighting</option>
                         <option value="home-protection">Home Protection</option>
                         <option value="farm-protection">Farm Protection</option>
+                        <option value="fashion-design">Fashion & Design</option>
                       </select>
                     </div>
                     <div>
@@ -610,7 +625,7 @@ export const Route = createFileRoute("/admin")({
                           <div className="min-w-0">
                             <p className="font-medium truncate">{p.name}</p>
                             <p className="text-sm text-muted-foreground truncate">
-                              {p.category} · KES {p.price ?? "—"} · stock {p.stock ?? 0}
+                              {p.category} · KES {p.price ?? "—"}{p.originalPrice ? ` · was KES ${p.originalPrice}` : ""} · stock {p.stock ?? 0}
                             </p>
                             <p className="text-xs text-muted-foreground font-mono truncate">{p.slug}</p>
                           </div>

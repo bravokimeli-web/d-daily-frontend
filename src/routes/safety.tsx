@@ -4,7 +4,7 @@ const guides = [
   { t: "Mosquito prevention", d: "Drain stagnant water, use nets at night, apply repellent on exposed skin, and wear our wristband for travel." },
   { t: "Safe herbicide use", d: "Wear gloves and a mask. Apply during calm weather. Never spray near water sources or food crops." },
   { t: "Snake-aware homes", d: "Clear bush around the perimeter, store firewood off the ground, and reapply repellent powder after rain." },
-  { t: "Indoor pest control", d: "Seal cracks, store food in sealed containers, and treat hotspots with our spray or sachet powder weekly." },
+  { t: "Indoor protection", d: "Seal cracks, store food in sealed containers, and treat hotspots with our spray or sachet powder weekly." },
 ];
 
 export const Route = createFileRoute("/safety")({

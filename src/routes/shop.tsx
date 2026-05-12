@@ -8,7 +8,7 @@ import { fetchActiveStorefrontProducts, mergeStaticAndApiProducts } from "@/lib/
 import { toast } from "sonner";
 
 const searchSchema = z.object({
-  category: z.enum(["pest-control", "lighting", "home-protection", "farm-protection"]).optional(),
+  category: z.enum(["lighting", "home-protection", "farm-protection", "fashion-design"]).optional(),
   q: z.string().optional(),
 });
 
@@ -57,12 +57,20 @@ function ShopPage() {
     return true;
   });
 
+  const isFashionDesign = cat === "fashion-design";
+
   return (
     <div className="container-px mx-auto max-w-7xl py-12 md:py-16">
       <header className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">Shop</p>
-        <h1 className="mt-2 font-display text-4xl md:text-5xl font-bold">All products</h1>
-        <p className="mt-3 text-muted-foreground">Premium essentials, ready to ship across Kenya.</p>
+        <h1 className="mt-2 font-display text-4xl md:text-5xl font-bold">
+          {isFashionDesign ? "Fashion & Design" : "All products"}
+        </h1>
+        <p className="mt-3 text-muted-foreground">
+          {isFashionDesign
+            ? "Stylish products are arriving soon — stay tuned for our new fashion collection."
+            : "Premium essentials, ready to ship across Kenya."}
+        </p>
       </header>
 
       <div className="mt-8 flex flex-wrap items-center gap-2">
@@ -117,6 +125,17 @@ function ShopPage() {
         <div className="mt-16 text-center text-muted-foreground">Loading products…</div>
       ) : (
         <>
+          {isFashionDesign && (
+            <div className="mt-10 rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-8 text-center">
+              <p className="text-sm uppercase tracking-[0.32em] text-primary">Fashion & Design</p>
+              <h2 className="mt-4 text-3xl font-semibold">Something stylish is coming soon</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
+                We’re curating a fresh collection of design-led products for brands, creatives, and modern homes.
+                Check back shortly for the launch.
+              </p>
+            </div>
+          )}
+
           <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filtered.map((p, i) => (
               <ProductCard product={p} key={p.slug} index={i} />
@@ -124,8 +143,14 @@ function ShopPage() {
           </div>
           {filtered.length === 0 && (
             <div className="py-20 text-center text-muted-foreground">
-              <p className="text-lg font-semibold text-foreground">No products match your filters.</p>
-              <p className="mt-2">Try clearing category filters or searching with a different keyword.</p>
+              <p className="text-lg font-semibold text-foreground">
+                {cat === "fashion-design" ? "Fashion & Design products are coming soon." : "No products match your filters."}
+              </p>
+              <p className="mt-2">
+                {cat === "fashion-design"
+                  ? "We’re working on stylish products for this category. Browse our other collections while you wait."
+                  : "Try clearing category filters or searching with a different keyword."}
+              </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 <Link
                   to="/shop"

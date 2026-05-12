@@ -11,7 +11,7 @@ import kit4in1 from "@/assets/products/4-1-image.jpeg";
 import kitComplete from "@/assets/products/complete-home-kit.jpeg";
 import kitBeforeAfter from "@/assets/products/be-after-4-1.jpeg";
 
-export type Category = "pest-control" | "lighting" | "home-protection" | "farm-protection";
+export type Category = "lighting" | "home-protection" | "farm-protection" | "fashion-design";
 
 export interface Product {
   slug: string;
@@ -31,10 +31,10 @@ export interface Product {
 }
 
 export const categories: { id: Category; name: string; description: string }[] = [
-  { id: "pest-control", name: "Pest Control", description: "Sprays, powders & traps for a pest-free home." },
   { id: "lighting", name: "Lighting", description: "Bright, durable lights for vendors and homes." },
   { id: "home-protection", name: "Home Protection", description: "Snake repellents, nets, wristbands and more." },
-  { id: "farm-protection", name: "Farm Protection", description: "Trusted herbicides for productive farms." },
+  { id: "farm-protection", name: "Farm Protection", description: "Trusted chemicals and farm protection products for productive fields." },
+  { id: "fashion-design", name: "Fashion & Design", description: "Products coming soon — stylish, creative essentials for your brand." },
 ];
 
 export const products: Product[] = [
@@ -43,7 +43,7 @@ export const products: Product[] = [
     name: "Insecticidal Spray 500ml",
     price: 999,
     originalPrice: 1499,
-    category: "pest-control",
+    category: "farm-protection",
     image: spray,
     tagline: "Fast knockdown for cockroaches, bed bugs, ants & fleas.",
     description:
@@ -70,7 +70,7 @@ export const products: Product[] = [
     name: "Insecticidal Powder Sachet",
     price: 80,
     originalPrice: 149,
-    category: "pest-control",
+    category: "farm-protection",
     image: powder,
     tagline: "Fipronil 0.3% — affordable, effective, single-use sachet.",
     description: "Pocket-sized 8g sachet of insecticidal powder. Place near pest hotspots for long-lasting effect.",
@@ -144,7 +144,7 @@ export const products: Product[] = [
     name: "Automatic Fly Catcher",
     price: 169,
     originalPrice: 200,
-    category: "pest-control",
+    category: "farm-protection",
     image: fly,
     tagline: "No baiting, no poisons, no mess — just results.",
     description:
@@ -205,7 +205,7 @@ export const products: Product[] = [
     name: "4-in-1 Home Pest Control Kit",
     price: 3599,
     originalPrice: 6232,
-    category: "pest-control",
+    category: "farm-protection",
     image: kit4in1,
     images: [kit4in1, kitComplete, kitBeforeAfter],
     tagline: "Complete home protection — spray, powder, repellent & traps.",

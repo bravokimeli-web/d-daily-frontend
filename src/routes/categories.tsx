@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { categories } from "@/data/products";
 import { useEffect, useState } from "react";
+import { Lightbulb, Home, Leaf, Sparkles } from "lucide-react";
 import type { Product } from "@/data/products";
 import { fetchActiveStorefrontProducts, mergeStaticAndApiProducts } from "@/lib/storefrontCatalog";
 import { resolveMediaUrl } from "@/lib/api";
+
+const categoryIcons = {
+  lighting: Lightbulb,
+  "home-protection": Home,
+  "farm-protection": Leaf,
+  "fashion-design": Sparkles,
+} as const;
 
 export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
@@ -34,6 +42,7 @@ function CategoriesPage() {
       <div className="mt-10 grid md:grid-cols-2 gap-5">
         {categories.map((c) => {
           const items = products.filter((p) => p.category === c.id);
+          const Icon = categoryIcons[c.id];
           return (
             <Link
               key={c.id}
@@ -41,19 +50,29 @@ function CategoriesPage() {
               search={{ category: c.id }}
               className="group rounded-3xl bg-card border p-8 hover:border-primary/40 hover:shadow-soft transition-all"
             >
-              <div className="font-display text-2xl font-bold group-hover:text-primary">{c.name}</div>
-              <p className="mt-2 text-muted-foreground">{c.description}</p>
-              <div className="mt-6 flex -space-x-3">
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-2xl bg-primary-soft text-primary flex items-center justify-center">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="font-display text-2xl font-bold group-hover:text-primary">{c.name}</div>
+              </div>
+              <p className="mt-4 text-muted-foreground">{c.description}</p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 {items.slice(0, 4).map((p) => (
                   <img
                     key={p.slug}
                     src={resolveMediaUrl(String(p.image))}
-                    alt=""
+                    alt={p.name}
                     className="h-14 w-14 rounded-xl border-2 border-card object-cover bg-surface"
                   />
                 ))}
               </div>
-              <div className="mt-6 text-sm font-semibold text-primary">Browse {items.length} products →</div>
+              <div className="mt-6 text-sm font-semibold text-muted-foreground">
+                {items.length ? `${items.length} products available` : "Coming soon"}
+              </div>
+              <div className="mt-3 text-sm font-semibold text-primary">
+                {items.length ? `Browse ${items.length} products →` : "Explore this category →"}
+              </div>
             </Link>
           );
         })}
