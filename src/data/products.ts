@@ -144,7 +144,7 @@ export const products: Product[] = [
     name: "Automatic Fly Catcher",
     price: 169,
     originalPrice: 200,
-    category: "farm-protection",
+    category: "home-protection",
     image: fly,
     tagline: "No baiting, no poisons, no mess — just results.",
     description:
@@ -205,7 +205,7 @@ export const products: Product[] = [
     name: "4-in-1 Home Pest Control Kit",
     price: 3599,
     originalPrice: 6232,
-    category: "farm-protection",
+    category: "home-protection",
     image: kit4in1,
     images: [kit4in1, kitComplete, kitBeforeAfter],
     tagline: "Complete home protection — spray, powder, repellent & traps.",
