@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getApiBaseUrl, resolveMediaUrl } from "@/lib/api";
-import { hasAdminAccess, getAdminEmail, clearAdminEmail } from "@/lib/admin";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { BarChart3, LogOut, Package, ShoppingCart, Users, Settings, Trash2, Eye, FileText, CheckCircle, XCircle, ExternalLink, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,8 +39,17 @@ function parseSpecLines(raw: FormDataEntryValue | null | undefined): { label: st
 
 export const Route = createFileRoute("/admin")({
   component: () => {
-    const isAdmin = hasAdminAccess();
-    const adminEmail = getAdminEmail();
+    const token = useMemo(() => {
+      if (typeof window === "undefined") return null;
+      return localStorage.getItem("admin_token");
+    }, []);
+
+    const adminEmail = useMemo(() => {
+      if (typeof window === "undefined") return null;
+      return localStorage.getItem("admin_email");
+    }, []);
+
+    const isAdmin = !!token;
     const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "orders" | "resellers" | "settings">("dashboard");
     const [products, setProducts] = useState<any[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -88,7 +96,7 @@ export const Route = createFileRoute("/admin")({
 
           const response = await fetch(url.toString(), {
             headers: { 
-              "x-admin-email": adminEmail || "",
+              "Authorization": `Bearer ${token}`,
             },
           });
 
@@ -104,7 +112,7 @@ export const Route = createFileRoute("/admin")({
       };
 
       fetchResellers();
-    }, [isAdmin, resellerFilter, adminEmail]);
+    }, [isAdmin, resellerFilter]);
 
     const handleResellerStatus = async (resellerId: string, status: "approved" | "rejected", notes?: string) => {
       try {
@@ -112,7 +120,7 @@ export const Route = createFileRoute("/admin")({
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "x-admin-email": adminEmail || "",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({ status, notes }),
         });
@@ -131,7 +139,7 @@ export const Route = createFileRoute("/admin")({
       try {
         const response = await fetch(`${getApiBaseUrl()}/admin/resellers/${resellerId}`, {
           method: "DELETE",
-          headers: { "x-admin-email": adminEmail || "" },
+          headers: { "Authorization": `Bearer ${token}` },
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.message || "Failed to delete");
@@ -148,7 +156,7 @@ export const Route = createFileRoute("/admin")({
           <div className="max-w-md text-center">
             <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
             <p className="mt-4 text-sm text-muted-foreground">
-              Enter your admin email to access the dashboard.
+              Sign in with your admin credentials.
             </p>
             <div className="mt-8">
               <AdminLoginForm />
@@ -167,7 +175,7 @@ export const Route = createFileRoute("/admin")({
     }
 
     const handleLogout = () => {
-      clearAdminEmail();
+      localStorage.removeItem("admin_token");
       window.location.href = "/";
     };
 
@@ -227,7 +235,7 @@ export const Route = createFileRoute("/admin")({
           fd.append("image", imageFile);
           const up = await fetch(`${getApiBaseUrl()}/admin/products/upload`, {
             method: "POST",
-            headers: { "x-admin-email": adminEmail || "" },
+            headers: { "Authorization": `Bearer ${token}` },
             body: fd,
           });
           const uj = await up.json().catch(() => ({}));
@@ -260,7 +268,7 @@ export const Route = createFileRoute("/admin")({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-admin-email": adminEmail || "",
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
             slug,
@@ -298,7 +306,7 @@ export const Route = createFileRoute("/admin")({
       try {
         const response = await fetch(`${getApiBaseUrl()}/admin/products/${encodeURIComponent(slug)}`, {
           method: "DELETE",
-          headers: { "x-admin-email": adminEmail || "" },
+          headers: { "Authorization": `Bearer ${token}` },
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.message || "Failed to remove product");

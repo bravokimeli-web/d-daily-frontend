@@ -1,32 +1,49 @@
 import { useState } from "react";
-import { setAdminEmail, ADMIN_EMAIL_PUBLIC } from "@/lib/admin";
+import { getApiBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle } from "lucide-react";
 
 export function AdminLoginForm() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    const trimmedEmail = email.toLowerCase().trim();
-    if (trimmedEmail === ADMIN_EMAIL_PUBLIC) {
-      setAdminEmail(trimmedEmail);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Store JWT token and admin info
+      localStorage.setItem("admin_token", data.data.token);
+      localStorage.setItem("admin_email", data.data.admin.email);
+      localStorage.setItem("admin_name", data.data.admin.name);
+
       setMessage({
         type: "success",
-        text: "Admin access granted. Redirecting...",
+        text: "Login successful. Redirecting...",
       });
+
       setTimeout(() => {
         window.location.href = "/admin";
-      }, 1500);
-    } else {
+      }, 1000);
+    } catch (err) {
       setMessage({
         type: "error",
-        text: "Invalid email. Please check and try again.",
+        text: (err as Error).message || "Login failed. Please check your credentials.",
       });
       setLoading(false);
     }
@@ -37,16 +54,33 @@ export function AdminLoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="admin-email" className="text-sm font-medium">
-            Admin Email
+            Email
           </label>
           <input
             id="admin-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter admin email"
+            placeholder="admin@ddaily.co.ke"
             className="mt-2 w-full h-11 px-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={loading}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="admin-password" className="text-sm font-medium">
+            Password
+          </label>
+          <input
+            id="admin-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password"
+            className="mt-2 w-full h-11 px-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={loading}
+            required
           />
         </div>
 
@@ -68,7 +102,7 @@ export function AdminLoginForm() {
         )}
 
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Verifying..." : "Verify Admin Access"}
+          {loading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
     </div>
