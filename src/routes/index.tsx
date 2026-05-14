@@ -135,10 +135,10 @@ function HomePage() {
 
       {/* WHY US */}
       <section className="container-px mx-auto max-w-7xl py-20">
-        <div className="rounded-3xl bg-foreground text-background p-10 md:p-16">
+        <div className="rounded-3xl bg-primary text-primary-foreground p-10 md:p-16">
           <div className="max-w-2xl">
             <h2 className="font-display text-3xl md:text-4xl font-bold">Why D-Daily</h2>
-            <p className="mt-3 text-background/70">A small list of promises we never break.</p>
+            <p className="mt-3 text-primary-foreground/80">A small list of promises we never break.</p>
           </div>
           <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {[
@@ -152,7 +152,7 @@ function HomePage() {
                   <f.icon className="h-5 w-5"/>
                 </div>
                 <div className="font-semibold">{f.t}</div>
-                <p className="mt-1 text-sm text-background/70">{f.d}</p>
+                <p className="mt-1 text-sm text-primary-foreground/80">{f.d}</p>
               </div>
             ))}
           </div>
