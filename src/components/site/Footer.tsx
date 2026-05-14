@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
 
 export function Footer() {
   return (
@@ -34,8 +34,15 @@ export function Footer() {
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary"/>Physical store: Embakasi, Nairobi, Kenya</li>
             <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-primary"/>+254 106555333</li>
-            <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary"/>ddailykenya01@gmail.com
-</li>
+            <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary"/>ddailykenya01@gmail.com</li>
+            <li className="flex items-start gap-2">
+              <Facebook className="h-4 w-4 mt-0.5 text-primary"/>
+              <a href="https://www.facebook.com/share/p/1P9duwyQiG/" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Facebook</a>
+            </li>
+            <li className="flex items-start gap-2">
+              <Instagram className="h-4 w-4 mt-0.5 text-primary"/>
+              <a href="https://www.instagram.com/ddailykenya01?igsh=cm5wd3FpbXhoenRu" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+            </li>
           </ul>
         </div>
       </div>
