@@ -56,10 +56,10 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.012 60);
 
-  /* Refined warm orange #E67E22 */
-  --primary: oklch(0.68 0.165 48);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-soft: oklch(0.96 0.035 65);
+  /* Vibrant orange matching the logo */
+  --primary: #ff6d00;
+  --primary-foreground: #ffffff;
+  --primary-soft: #ffe4cc;
 
   --secondary: oklch(0.96 0.008 70);
   --secondary-foreground: oklch(0.22 0.012 60);
@@ -98,9 +98,9 @@
   --card-foreground: oklch(0.97 0.005 70);
   --popover: oklch(0.22 0.012 60);
   --popover-foreground: oklch(0.97 0.005 70);
-  --primary: oklch(0.72 0.16 48);
-  --primary-foreground: oklch(0.15 0.012 60);
-  --primary-soft: oklch(0.30 0.06 50);
+  --primary: #ff7d20;
+  --primary-foreground: oklch(0.97 0.005 70);
+  --primary-soft: #ffb589;
   --secondary: oklch(0.26 0.012 60);
   --secondary-foreground: oklch(0.97 0.005 70);
   --muted: oklch(0.26 0.012 60);
