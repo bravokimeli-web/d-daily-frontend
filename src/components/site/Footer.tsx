@@ -37,7 +37,7 @@ export function Footer() {
             <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary"/>ddailykenya01@gmail.com</li>
             <li className="flex items-start gap-2">
               <Facebook className="h-4 w-4 mt-0.5 text-primary"/>
-              <a href="https://www.facebook.com/share/p/1P9duwyQiG/" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Facebook</a>
+              <a href="https://www.facebook.com/profile.php?id=61575401875421" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Facebook</a>
             </li>
             <li className="flex items-start gap-2">
               <Instagram className="h-4 w-4 mt-0.5 text-primary"/>
